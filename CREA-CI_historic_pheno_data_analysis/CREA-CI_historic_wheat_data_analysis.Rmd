@@ -320,7 +320,7 @@ get_BLUEs <- function(asreml_data){intercept_index <- nrow(asreml_data$coeff$fix
                             BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
                             return(BLUE |> as.data.frame() |>
                                     rownames_to_column() |>
-                                    mutate(genotype=str_sub(rowname,18)) |>
+                                    mutate(genotype=str_split_i(rowname,"_", -1)) |> #assuming there is no underscore in the accession numbers
                                     select(genotype, BLUE))}
 
 BLUEs_HT <- get_BLUEs(asreml_data_HT) |> rename("days_to_heading_BLUE"="BLUE")
