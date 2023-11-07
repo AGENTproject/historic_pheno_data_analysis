@@ -1,0 +1,342 @@
+---
+title: An R Markdown document converted from "CREA-CI_historic_wheat_data_analysis.ipynb"
+output: html_document
+---
+
+# CREA-CI historical phenotypic wheat data analysis
+
+## Load packages and data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(multtest)
+library(asreml)
+```
+
+```{r}
+data_file <- "CREA-historic.xlsx"
+experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
+observations <- read_xlsx(data_file, sheet = "Observed scores") |> rename_with(~tolower(gsub(" ", "_", .x)))
+```
+
+```{r}
+glimpse(observations)
+```
+
+```{r}
+summary(observations[7:15])
+```
+
+```{r}
+CREA_wheat <- observations |>
+                left_join(experiments, by = "experiment_id") |>
+                unite("campaign", c(year_start,year_end), sep="-") |>
+                select(accenumb, campaign, days_to_heading, plant_height, thousand_kernel_weight) |>
+                drop_na(accenumb, campaign) |> distinct() |> arrange(campaign, accenumb)
+```
+
+```{r}
+glimpse(CREA_wheat)
+```
+
+```{r}
+write_csv(CREA_wheat, "CREA_wheat.csv")
+```
+
+```{r}
+data_total <- CREA_wheat
+genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
+```
+
+```{r}
+summary(data_total[3:5])
+```
+
+```{r}
+nrow(genotypes)
+```
+
+## Remove singletons, make factors, exclude main outliers
+
+```{r}
+make_data_sub <- function(full_df, trait){
+                    full_df |> drop_na(all_of(trait)) |> 
+                    group_by(accenumb) |> filter(n()>1) |>
+                    group_by(campaign) |> filter(n()>1) |> 
+                    mutate_at(vars(accenumb, campaign), factor) |> 
+                    as.data.frame()}
+
+data_sub_HT <- data_total |> filter(between(days_to_heading, 80, 200)) |> make_data_sub("days_to_heading")
+data_sub_PH <- data_total |> filter(between(plant_height, 25, 300)) |> make_data_sub("plant_height")
+data_sub_TKW <- data_total |> filter(between(thousand_kernel_weight, 10, 90)) |> make_data_sub("thousand_kernel_weight")
+```
+
+## Trait values visualisation
+
+```{r}
+dim(data_sub_HT)
+dim(data_sub_PH)
+dim(data_sub_TKW)
+```
+
+```{r}
+options(repr.plot.width=8, repr.plot.height=6)
+data_sub_HT |> ggplot(aes(x=campaign, y=days_to_heading))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
+data_sub_PH |> ggplot(aes(x=campaign, y=plant_height))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
+data_sub_TKW |> ggplot(aes(x=campaign, y=thousand_kernel_weight))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
+```
+
+```{r}
+data_sub_HT |> ggplot(aes(x=days_to_heading))+ geom_density(na.rm=TRUE)
+data_sub_PH |> ggplot(aes(x=plant_height))+ geom_density(na.rm=TRUE)
+data_sub_TKW |> ggplot(aes(x=thousand_kernel_weight))+ geom_density(na.rm=TRUE)
+```
+
+## Extract and format the campaign effects
+
+```{r}
+asreml_campaign_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+                             data = data_sub_HT)
+```
+
+```{r}
+asreml_campaign_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_PH)
+```
+
+```{r}
+asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_TKW)
+```
+
+```{r}
+get_campaign_effect <- function(asreml_campaign){
+                        intercept_index <- nrow(asreml_campaign$coeff$fixed)
+                        intercept <- asreml_campaign$coeff$fixed[intercept_index]
+                        campaign_effect <- asreml_campaign$coeff$fixed[-intercept_index,] + intercept
+                        return(campaign_effect |> as.data.frame() |> rownames_to_column() |> 
+                                mutate(campaign = str_sub(rowname,10)) |> 
+                                select(campaign, campaign_effect))}
+
+campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
+campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
+campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
+```
+
+## Extract heterogeneous error variances
+
+```{r}
+get_error_var <- function(asreml_campaign){
+                    summary(asreml_campaign)$varcomp |> slice(2:n()) |> select(std.error) |> 
+                    as_tibble() |> rename("error_variance"="std.error")}
+
+error_var_HT <- get_error_var(asreml_campaign_HT)
+error_var_PH <- get_error_var(asreml_campaign_PH)
+error_var_TKW <- get_error_var(asreml_campaign_TKW)
+```
+
+## Calculate and standardize the coefficient of variation (CV)
+
+```{r}
+make_CV_df <- function(campaign_effect, error_var){
+                tibble(campaign_effect, error_var) |> 
+                mutate(coefficient_of_variation=sqrt(error_variance)/campaign_effect) |> 
+                mutate(standardized_CV=(coefficient_of_variation-mean(coefficient_of_variation)
+                                       )/sd(coefficient_of_variation))}
+
+CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
+CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
+CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
+```
+
+## Remove outlier campaigns
+
+```{r}
+correct_I <- function(data_sub, CV_df){
+                        outlier_campaigns <- CV_df |> filter(standardized_CV > 3.5) |> select(campaign)
+                        return(data_sub |> filter(! campaign %in% outlier_campaigns))}
+
+data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
+data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
+data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
+```
+
+## Residuals
+
+```{r}
+res_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_HT_I)
+```
+
+```{r}
+res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_PH_I)
+```
+
+```{r}
+res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_TKW_I)
+```
+
+```{r}
+make_BH <- function(model_res){
+            residual <- model_res$residuals
+            MAD <- 1.4826*median(abs(residual-median(residual)))
+            res_MAD <- residual/MAD
+            rawp_BHStud <- 2 * (1 - pnorm(abs(res_MAD)))
+            test_BHStud <- mt.rawp2adjp(rawp_BHStud, proc=c("Holm"))
+            return(tibble(adjp=test_BHStud[[1]][,1], bholm=test_BHStud[[1]][,2], index=test_BHStud[[2]]) |>
+                    mutate(out_flag = ifelse(bholm < 0.05, "OUTLIER", ".")) |> as.data.frame())}
+
+result_BH_HT <- make_BH(res_HT)
+result_BH_PH <- make_BH(res_PH)
+result_BH_TKW <- make_BH(res_TKW)
+```
+
+```{r}
+outlier_HT <- data_sub_HT[result_BH_HT[which(result_BH_HT$out_flag=="OUTLIER"),"index"],]
+outlier_pch_HT <- array(1,dim(res_HT$residuals))
+outlier_pch_HT[result_BH_HT[which(result_BH_HT$out_flag=="OUTLIER"),"index"],] <- 8
+std_residual_HT <- res_HT$residuals / sd(res_HT$residuals)
+plot_HT <- data.frame(c(seq_len(nrow(data_corrected_HT_I))),std_residual_HT) |> setNames(c("data_point","residuals"))
+plot(plot_HT$data_point, plot_HT$residuals, pch=outlier_pch_HT, 
+      main = "heading time data quality", 
+      ylab = "std. residuals", xlab = "data point")
+```
+
+```{r}
+outlier_PH <- data_sub_PH[result_BH_PH[which(result_BH_PH$out_flag=="OUTLIER"),"index"],]
+outlier_pch_PH <- array(1,dim(res_PH$residuals))
+outlier_pch_PH[result_BH_PH[which(result_BH_PH$out_flag=="OUTLIER"),"index"],] <- 8
+std_residual_PH <- res_PH$residuals / sd(res_PH$residuals)
+plot_PH <- data.frame(c(seq_len(nrow(data_corrected_PH_I))),std_residual_PH) |> setNames(c("data_point","residuals"))
+plot(plot_PH$data_point, plot_PH$residuals, pch=outlier_pch_PH, 
+      main = "plant height data quality", 
+      ylab = "std. residuals", xlab = "data point")
+```
+
+```{r}
+outlier_TKW <- data_sub_TKW[result_BH_TKW[which(result_BH_TKW$out_flag=="OUTLIER"),"index"],]
+outlier_pch_TKW <- array(1,dim(res_TKW$residuals))
+outlier_pch_TKW[result_BH_TKW[which(result_BH_TKW$out_flag=="OUTLIER"),"index"],] <- 8
+std_residual_TKW <- res_TKW$residuals / sd(res_TKW$residuals)
+plot_TKW <- data.frame(c(seq_len(nrow(data_corrected_TKW_I))),std_residual_TKW) |> setNames(c("data_point","residuals"))
+plot(plot_TKW$data_point, plot_TKW$residuals, pch=outlier_pch_TKW, 
+      main = "thousand kernel weight data quality", 
+      ylab = "std. residuals", xlab = "data point")
+```
+
+```{r}
+correct_II <- function(data_corrected_I, result_BH){
+                        data_corrected_I[result_BH[which(result_BH$out_flag=="."),"index"],] |> 
+                        group_by(accenumb) |> filter(n() > 1) |> arrange(campaign) |> 
+                        as.data.frame() |> droplevels()}
+
+data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
+data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
+data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
+```
+
+## Calculate heritability
+
+```{r}
+res_h_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_HT_II)
+```
+
+```{r}
+res_h_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PH_II)
+```
+
+```{r}
+res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"),
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_TKW_II)
+```
+
+```{r}
+get_quality <- function(trait, data_sub, res_h){
+                varcomp <- summary(res_h)$varcomp
+                var_G <- varcomp[2,"component"]
+                var_E <- mean(varcomp[3:nrow(varcomp),"component"])
+                no_campaigns <- mean(table(data_sub$accenumb[!is.na(data_sub[,trait])]))
+                heritability <- var_G/(var_G+(var_E/no_campaigns))
+                cat("heritability:", round(heritability*100,1), "%")
+                return(tibble(trait, heritability, var_G, var_E, no_campaigns))}
+```
+
+```{r}
+quality_HT <- get_quality("days_to_heading", data_sub_HT, res_h_HT)
+```
+
+```{r}
+quality_PH <- get_quality("plant_height", data_sub_PH, res_h_PH)
+```
+
+```{r}
+quality_TKW <- get_quality("thousand_kernel_weight", data_sub_TKW, res_h_TKW)
+```
+
+```{r}
+quality_all = bind_rows(quality_HT, quality_PH, quality_TKW)
+write_csv(quality_all,"CREA_wheat_data_quality.csv")
+```
+
+## Run linear mixed model with outlier corrected data
+
+```{r}
+asreml_data_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_HT_II)
+```
+
+```{r}
+asreml_data_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PH_II)
+```
+
+```{r}
+asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                          data = data_corrected_TKW_II)
+```
+
+## Extract BLUEs and create output file
+
+```{r}
+get_BLUEs <- function(asreml_data){intercept_index <- nrow(asreml_data$coeff$fixed)
+                            intercept <- asreml_data$coeff$fixed[intercept_index]
+                            BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
+                            return(BLUE |> as.data.frame() |>
+                                    rownames_to_column() |>
+                                    mutate(genotype=str_sub(rowname,18)) |>
+                                    select(genotype, BLUE))}
+
+BLUEs_HT <- get_BLUEs(asreml_data_HT) |> rename("days_to_heading_BLUE"="BLUE")
+BLUEs_PH <- get_BLUEs(asreml_data_PH) |> rename("plant_height_BLUE"="BLUE")
+BLUEs_TKW <- get_BLUEs(asreml_data_TKW) |> rename("thousand_kernel_weight_BLUE"="BLUE")
+
+BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
+                        left_join(BLUEs_PH, by="genotype") |> 
+                        left_join(BLUEs_TKW, by="genotype") |> 
+                        arrange(genotype)
+
+write_csv(BLUE_all,"CREA_wheat_BLUE_values.csv")
+```
+
+```{r}
+library(rmarkdown)
+convert_ipynb("CREA-CI_historic_wheat_data_analysis.ipynb")
+```
+
