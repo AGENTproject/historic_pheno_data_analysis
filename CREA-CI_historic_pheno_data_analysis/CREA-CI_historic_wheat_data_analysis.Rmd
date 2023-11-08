@@ -18,14 +18,7 @@ library(asreml)
 data_file <- "CREA-historic.xlsx"
 experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
 observations <- read_xlsx(data_file, sheet = "Observed scores") |> rename_with(~tolower(gsub(" ", "_", .x)))
-```
-
-```{r}
 glimpse(observations)
-```
-
-```{r}
-summary(observations[7:15])
 ```
 
 ```{r}
@@ -34,27 +27,16 @@ CREA_wheat <- observations |>
                 unite("campaign", c(year_start,year_end), sep="-") |>
                 select(accenumb, campaign, days_to_heading, plant_height, thousand_kernel_weight) |>
                 drop_na(accenumb, campaign) |> distinct() |> arrange(campaign, accenumb)
-```
-
-```{r}
-glimpse(CREA_wheat)
-```
-
-```{r}
 write_csv(CREA_wheat, "CREA_wheat.csv")
+glimpse(CREA_wheat)
 ```
 
 ```{r}
 data_total <- CREA_wheat
 genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
-```
-
-```{r}
+cat(sprintf("%i observations \n%i genotypes \n%i campaigns \n\nSummary of AGENT traits values:",
+            nrow(data_total), nrow(genotypes), nrow(distinct(data_total["campaign"]))))
 summary(data_total[3:5])
-```
-
-```{r}
-nrow(genotypes)
 ```
 
 ## Remove singletons, make factors, exclude main outliers
@@ -70,15 +52,11 @@ make_data_sub <- function(full_df, trait){
 data_sub_HT <- data_total |> filter(between(days_to_heading, 80, 200)) |> make_data_sub("days_to_heading")
 data_sub_PH <- data_total |> filter(between(plant_height, 25, 300)) |> make_data_sub("plant_height")
 data_sub_TKW <- data_total |> filter(between(thousand_kernel_weight, 10, 90)) |> make_data_sub("thousand_kernel_weight")
+
+cat(sprintf("%i HT rows kept \n%i PH rows kept \n%i TKW rows kept \n", nrow(data_sub_HT), nrow(data_sub_PH), nrow(data_sub_TKW)))
 ```
 
 ## Trait values visualisation
-
-```{r}
-dim(data_sub_HT)
-dim(data_sub_PH)
-dim(data_sub_TKW)
-```
 
 ```{r}
 options(repr.plot.width=8, repr.plot.height=6)
@@ -315,7 +293,8 @@ asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign,
 ## Extract BLUEs and create output file
 
 ```{r}
-get_BLUEs <- function(asreml_data){intercept_index <- nrow(asreml_data$coeff$fixed)
+get_BLUEs <- function(asreml_data){
+                            intercept_index <- nrow(asreml_data$coeff$fixed)
                             intercept <- asreml_data$coeff$fixed[intercept_index]
                             BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
                             return(BLUE |> as.data.frame() |>
