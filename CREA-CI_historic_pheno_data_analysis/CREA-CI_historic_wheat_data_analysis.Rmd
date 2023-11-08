@@ -43,7 +43,7 @@ summary(data_total[3:5])
 
 ```{r}
 make_data_sub <- function(full_df, trait){
-                    full_df |> drop_na(all_of(trait)) |> 
+                    full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> 
                     group_by(accenumb) |> filter(n()>1) |>
                     group_by(campaign) |> filter(n()>1) |> 
                     mutate_at(vars(accenumb, campaign), factor) |> 
@@ -60,15 +60,29 @@ cat(sprintf("%i HT rows kept \n%i PH rows kept \n%i TKW rows kept \n", nrow(data
 
 ```{r}
 options(repr.plot.width=8, repr.plot.height=6)
-data_sub_HT |> ggplot(aes(x=campaign, y=days_to_heading))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
-data_sub_PH |> ggplot(aes(x=campaign, y=plant_height))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
-data_sub_TKW |> ggplot(aes(x=campaign, y=thousand_kernel_weight))+ geom_jitter(na.rm=TRUE) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))
+visualise_trait <- function(data_sub){
+                    trait <- colnames(data_sub)[3]
+                    plot(ggplot(data_sub, aes(campaign,.data[[trait]])) + geom_jitter(na.rm=TRUE
+                    ) + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=0.5)))
+                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom_density(na.rm=TRUE))}
 ```
 
+### Heading time
+
 ```{r}
-data_sub_HT |> ggplot(aes(x=days_to_heading))+ geom_density(na.rm=TRUE)
-data_sub_PH |> ggplot(aes(x=plant_height))+ geom_density(na.rm=TRUE)
-data_sub_TKW |> ggplot(aes(x=thousand_kernel_weight))+ geom_density(na.rm=TRUE)
+data_sub_HT |> visualise_trait()
+```
+
+### Plant height
+
+```{r}
+data_sub_PH |> visualise_trait()
+```
+
+### Thousand kernel weight
+
+```{r}
+data_sub_TKW |> visualise_trait()
 ```
 
 ## Extract and format the campaign effects
