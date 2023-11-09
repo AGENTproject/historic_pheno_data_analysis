@@ -58,7 +58,7 @@ cat(sprintf("%i HT rows kept \n%i PH rows kept \n%i TKW rows kept \n", nrow(data
 ## Visualise trait values 
 
 ```{r}
-options(repr.plot.width=8, repr.plot.height=6)
+options(repr.plot.width=12, repr.plot.height=7)
 visualise_trait <- function(data_sub){
                     trait <- colnames(data_sub)[3]
                     trait_title <- trait |> str_replace_all("_", " ") |> str_to_title()
@@ -133,8 +133,7 @@ error_var_TKW <- get_error_var(asreml_campaign_TKW)
 make_CV_df <- function(campaign_effect, error_var){
                 tibble(campaign_effect, error_var) |> 
                 mutate(coefficient_of_variation=sqrt(error_variance)/campaign_effect) |> 
-                mutate(standardized_CV=(coefficient_of_variation-mean(coefficient_of_variation)
-                                       )/sd(coefficient_of_variation))}
+                mutate(standardized_CV=(coefficient_of_variation-mean(coefficient_of_variation))/sd(coefficient_of_variation))}
 
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
 CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
@@ -235,7 +234,8 @@ asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campa
 ```
 
 ```{r}
-get_quality <- function(trait, data_sub, asreml_res_h){
+get_quality <- function(data_sub, asreml_res_h){
+                trait <- colnames(data_sub)[3]
                 varcomp <- summary(asreml_res_h)$varcomp
                 var_G <- varcomp[2,"component"]
                 var_E <- mean(varcomp[3:nrow(varcomp),"component"])
@@ -246,15 +246,19 @@ get_quality <- function(trait, data_sub, asreml_res_h){
 ```
 
 ```{r}
-quality_HT <- get_quality("days_to_heading", data_sub_HT, asreml_res_h_HT)
+data_sub_HT
 ```
 
 ```{r}
-quality_PH <- get_quality("plant_height", data_sub_PH, asreml_res_h_PH)
+quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
 ```
 
 ```{r}
-quality_TKW <- get_quality("thousand_kernel_weight", data_sub_TKW, asreml_res_h_TKW)
+quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
+```
+
+```{r}
+quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
 ```
 
 ```{r}
