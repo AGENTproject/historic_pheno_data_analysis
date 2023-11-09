@@ -280,7 +280,7 @@ quality_TKW <- get_quality("thousand_kernel_weight", data_sub_TKW, res_h_TKW)
 ```
 
 ```{r}
-quality_all = bind_rows(quality_HT, quality_PH, quality_TKW)
+quality_all = bind_rows(quality_HT, quality_PH, quality_TKW) |> mutate(across(-1, round, 3))
 write_csv(quality_all,"CREA_wheat_data_quality.csv")
 ```
 
@@ -323,7 +323,7 @@ BLUEs_TKW <- get_BLUEs(asreml_data_TKW) |> rename("thousand_kernel_weight_BLUE"=
 BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
                         left_join(BLUEs_PH, by="genotype") |> 
                         left_join(BLUEs_TKW, by="genotype") |> 
-                        arrange(genotype)
+                        arrange(genotype) |> mutate(across(-1, round, 2))
 
 write_csv(BLUE_all,"CREA_wheat_BLUE_values.csv")
 ```
