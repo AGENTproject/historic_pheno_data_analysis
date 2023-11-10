@@ -25,7 +25,7 @@ glimpse(observations)
 CREA_wheat <- observations |>
                 left_join(experiments, by = "experiment_id") |>
                 unite("campaign", c(year_start,year_end), sep="-") |>
-                select(accenumb, campaign, days_to_heading, plant_height, thousand_kernel_weight) |>
+                select(accenumb, campaign, days_to_heading:sds_sedimentation_volume) |>
                 drop_na(accenumb, campaign) |> distinct() |> arrange(campaign, accenumb)
 write_csv(CREA_wheat, "CREA_wheat.csv")
 glimpse(CREA_wheat)
@@ -36,49 +36,53 @@ data_total <- CREA_wheat
 genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
 cat(sprintf("%i observations \n%i genotypes \n%i campaigns \n\nSummary of AGENT traits values:",
             nrow(data_total), nrow(genotypes), nrow(distinct(data_total["campaign"]))))
-summary(data_total[3:5])
+summary(data_total[3:11])
 ```
 
 ## Subset data, remove missing values and singletons, make factors
 
 ```{r}
 make_data_sub <- function(full_df, trait){
-                    full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> distinct() |>
+                    data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> distinct() |>
                     group_by(accenumb) |> filter(n()>1) |> group_by(campaign) |> filter(n()>1) |> 
-                    mutate_at(vars(accenumb, campaign), factor) |> 
-                    as.data.frame()}
+                    mutate_at(vars(accenumb, campaign), factor)
+                    cat(nrow(data_sub), trait, "rows kept\n") 
+                    return(as.data.frame(data_sub))}
 
 data_sub_HT <- data_total |> make_data_sub("days_to_heading")
 data_sub_PH <- data_total |> make_data_sub("plant_height")
 data_sub_TKW <- data_total |> make_data_sub("thousand_kernel_weight")
-
-cat(sprintf("%i HT rows kept \n%i PH rows kept \n%i TKW rows kept \n", nrow(data_sub_HT), nrow(data_sub_PH), nrow(data_sub_TKW)))
+data_sub_PM <- data_total |> make_data_sub("powdery_mildew")
+data_sub_LR<- data_total |> make_data_sub("leaf_rust")
+# YR has observations in only one campaign so cannot be analysed here
+data_sub_ST <- data_total |> make_data_sub("septoria_tritici_ssp")
+data_sub_PC <- data_total |> make_data_sub("protein_content")
+data_sub_SV <- data_total |> make_data_sub("sds_sedimentation_volume")
 ```
 
 ## Visualise trait values 
 
 ```{r}
 options(repr.plot.width=12, repr.plot.height=7)
-visualise_trait <- function(data_sub){
+visualise_trait <- function(data_sub, geom){
                     trait <- colnames(data_sub)[3]
                     trait_title <- trait |> str_replace_all("_", " ") |> str_to_title()
                     plot(ggplot(data_sub, aes(campaign,.data[[trait]])) + geom_jitter(na.rm=TRUE)
                          + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=0.5))
                          + labs(title = trait_title, subtitle = "Trait values per campaign",))
-                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom_density(na.rm=TRUE)
+                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom(na.rm=TRUE)
                          + labs(title = trait_title, subtitle = "Distribution of trait values",))}
 ```
 
 ```{r}
-data_sub_HT |> visualise_trait()
-```
-
-```{r}
-data_sub_PH |> visualise_trait()
-```
-
-```{r}
-data_sub_TKW |> visualise_trait()
+data_sub_HT |> visualise_trait(geom_density)
+data_sub_PH |> visualise_trait(geom_density)
+data_sub_TKW |> visualise_trait(geom_density)
+data_sub_PM |> visualise_trait(geom_histogram)
+data_sub_LR |> visualise_trait(geom_histogram)
+data_sub_ST |> visualise_trait(geom_histogram)
+data_sub_PC |> visualise_trait(geom_density)
+data_sub_SV |> visualise_trait(geom_density)
 ```
 
 ## Extract and format the campaign effects
@@ -102,6 +106,37 @@ asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random =
 ```
 
 ```{r}
+#asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
+#                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+#                              data = data_sub_PM)
+# fails with error: Singularities in the average information matrix.
+```
+
+```{r}
+asreml_campaign_LR <- asreml(fixed = leaf_rust ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_LR)
+```
+
+```{r}
+asreml_campaign_ST <- asreml(fixed = septoria_tritici_ssp ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_ST)
+```
+
+```{r}
+asreml_campaign_PC <- asreml(fixed = protein_content ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_PC)
+```
+
+```{r}
+asreml_campaign_SV <- asreml(fixed = sds_sedimentation_volume ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_SV)
+```
+
+```{r}
 get_campaign_effect <- function(asreml_campaign){
                         intercept_index <- nrow(asreml_campaign$coeff$fixed)
                         intercept <- asreml_campaign$coeff$fixed[intercept_index]
@@ -113,6 +148,10 @@ get_campaign_effect <- function(asreml_campaign){
 campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
 campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
 campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
+campaign_effect_LR <- get_campaign_effect(asreml_campaign_LR)
+campaign_effect_ST <- get_campaign_effect(asreml_campaign_ST)
+campaign_effect_PC <- get_campaign_effect(asreml_campaign_PC)
+campaign_effect_SV <- get_campaign_effect(asreml_campaign_SV)
 ```
 
 ## Extract heterogeneous error variances
@@ -125,6 +164,10 @@ get_error_var <- function(asreml_campaign){
 error_var_HT <- get_error_var(asreml_campaign_HT)
 error_var_PH <- get_error_var(asreml_campaign_PH)
 error_var_TKW <- get_error_var(asreml_campaign_TKW)
+error_var_LR <- get_error_var(asreml_campaign_LR)
+error_var_ST <- get_error_var(asreml_campaign_ST)
+error_var_PC <- get_error_var(asreml_campaign_PC)
+error_var_SV <- get_error_var(asreml_campaign_SV)
 ```
 
 ## Calculate and standardize the coefficient of variation (CV)
@@ -138,6 +181,10 @@ make_CV_df <- function(campaign_effect, error_var){
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
 CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
 CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
+CV_df_LR <- make_CV_df(campaign_effect_LR, error_var_LR)
+CV_df_ST <- make_CV_df(campaign_effect_ST, error_var_ST)
+CV_df_PC <- make_CV_df(campaign_effect_PC, error_var_PC)
+CV_df_SV <- make_CV_df(campaign_effect_SV, error_var_SV)
 ```
 
 ## Remove outlier campaigns
@@ -152,6 +199,10 @@ correct_I <- function(data_sub, CV_df){
 data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
 data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
 data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
+data_corrected_LR_I <- data_sub_LR |> correct_I(CV_df_LR)
+data_corrected_ST_I <- data_sub_ST |> correct_I(CV_df_ST)
+data_corrected_PC_I <- data_sub_PC |> correct_I(CV_df_PC)
+data_corrected_SV_I <- data_sub_SV |> correct_I(CV_df_SV)
 ```
 
 ## Residuals
@@ -172,6 +223,30 @@ asreml_res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign,
 asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
                   na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                   data = data_corrected_TKW_I)
+```
+
+```{r}
+asreml_res_LR <- asreml(fixed = leaf_rust ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_LR_I)
+```
+
+```{r}
+asreml_res_ST <- asreml(fixed = septoria_tritici_ssp ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_ST_I)
+```
+
+```{r}
+asreml_res_PC <- asreml(fixed = protein_content ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_PC_I)
+```
+
+```{r}
+asreml_res_SV <- asreml(fixed = sds_sedimentation_volume ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_SV_I)
 ```
 
 ```{r}
@@ -203,6 +278,22 @@ result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
 ```
 
 ```{r}
+result_BH_LR <- make_BH_multtest(asreml_res_LR)
+```
+
+```{r}
+result_BH_ST <- make_BH_multtest(asreml_res_ST)
+```
+
+```{r}
+result_BH_PC <- make_BH_multtest(asreml_res_PC)
+```
+
+```{r}
+result_BH_SV <- make_BH_multtest(asreml_res_SV)
+```
+
+```{r}
 correct_II <- function(data_corrected_I, result_BH){
                         data_corrected_I[result_BH[which(!result_BH$is_outlier),"index"],] |> 
                         group_by(accenumb) |> filter(n() > 1) |> arrange(campaign) |> 
@@ -211,6 +302,10 @@ correct_II <- function(data_corrected_I, result_BH){
 data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
 data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
 data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
+data_corrected_LR_II <- data_corrected_LR_I |> correct_II(result_BH_LR)
+data_corrected_ST_II <- data_corrected_ST_I |> correct_II(result_BH_ST)
+data_corrected_PC_II <- data_corrected_PC_I |> correct_II(result_BH_PC)
+data_corrected_SV_II <- data_corrected_SV_I |> correct_II(result_BH_SV)
 ```
 
 ## Calculate heritability
@@ -234,6 +329,30 @@ asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campa
 ```
 
 ```{r}
+asreml_res_h_LR <- asreml(leaf_rust ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_LR_II)
+```
+
+```{r}
+asreml_res_h_ST <- asreml(septoria_tritici_ssp ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_ST_II)
+```
+
+```{r}
+asreml_res_h_PC <- asreml(protein_content ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PC_II)
+```
+
+```{r}
+asreml_res_h_SV <- asreml(sds_sedimentation_volume ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_SV_II)
+```
+
+```{r}
 get_quality <- function(data_sub, asreml_res_h){
                 trait <- colnames(data_sub)[3]
                 varcomp <- summary(asreml_res_h)$varcomp
@@ -241,24 +360,19 @@ get_quality <- function(data_sub, asreml_res_h){
                 var_E <- mean(varcomp[3:nrow(varcomp),"component"])
                 no_campaigns <- mean(table(data_sub$accenumb[!is.na(data_sub[,trait])]))
                 heritability <- var_G/(var_G+(var_E/no_campaigns))
-                cat(colnames(data_sub)[3], "heritability:", round(heritability*100,1), "%")
+                cat(colnames(data_sub)[3], "heritability:", round(heritability*100,1), "%\n")
                 return(tibble(trait, heritability, var_G, var_E, no_campaigns))}
-```
 
-```{r}
 quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
-```
-
-```{r}
 quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
-```
-
-```{r}
 quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
-```
+quality_LR <- get_quality(data_sub_LR, asreml_res_h_LR)
+quality_ST <- get_quality(data_sub_ST, asreml_res_h_ST)
+quality_PC <- get_quality(data_sub_PC, asreml_res_h_PC)
+quality_SV <- get_quality(data_sub_SV, asreml_res_h_SV)
 
-```{r}
-quality_all = bind_rows(quality_HT, quality_PH, quality_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+quality_all = bind_rows(quality_HT, quality_PH, quality_TKW, quality_LR, quality_ST, quality_PC, quality_SV) |> 
+                    mutate(across(-1, \(x) round(x, 3)))
 write_csv(quality_all,"CREA_wheat_data_quality.csv")
 ```
 
@@ -282,6 +396,30 @@ asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign,
                           data = data_corrected_TKW_II)
 ```
 
+```{r}
+asreml_data_LR <- asreml(leaf_rust ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_LR_II)
+```
+
+```{r}
+asreml_data_ST <- asreml(septoria_tritici_ssp ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_ST_II)
+```
+
+```{r}
+asreml_data_PC <- asreml(protein_content ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PC_II)
+```
+
+```{r}
+asreml_data_SV <- asreml(sds_sedimentation_volume ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_SV_II)
+```
+
 ## Extract BLUEs and create output file
 
 ```{r}
@@ -297,10 +435,19 @@ get_BLUEs <- function(asreml_data){
 BLUEs_HT <- get_BLUEs(asreml_data_HT) |> rename("days_to_heading_BLUE"="BLUE")
 BLUEs_PH <- get_BLUEs(asreml_data_PH) |> rename("plant_height_BLUE"="BLUE")
 BLUEs_TKW <- get_BLUEs(asreml_data_TKW) |> rename("thousand_kernel_weight_BLUE"="BLUE")
+BLUEs_LR <- get_BLUEs(asreml_data_LR) |> rename("leaf_rust_BLUE"="BLUE")
+BLUEs_ST <- get_BLUEs(asreml_data_ST) |> rename("septoria_tritici_ssp_BLUE"="BLUE")
+BLUEs_PC <- get_BLUEs(asreml_data_PC) |> rename("protein_content_BLUE"="BLUE")
+BLUEs_SV <- get_BLUEs(asreml_data_SV) |> rename("sds_sedimentation_volume_BLUE"="BLUE")
+
 
 BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
                         left_join(BLUEs_PH, by="genotype") |> 
                         left_join(BLUEs_TKW, by="genotype") |> 
+                        left_join(BLUEs_LR, by="genotype") |> 
+                        left_join(BLUEs_ST, by="genotype") |> 
+                        left_join(BLUEs_PC, by="genotype") |> 
+                        left_join(BLUEs_SV, by="genotype") |> 
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
 
 write_csv(BLUE_all,"CREA_wheat_BLUE_values.csv")
