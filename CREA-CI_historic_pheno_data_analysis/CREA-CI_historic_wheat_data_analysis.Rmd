@@ -133,7 +133,7 @@ error_var_TKW <- get_error_var(asreml_campaign_TKW)
 make_CV_df <- function(campaign_effect, error_var){
                 tibble(campaign_effect, error_var) |> 
                 mutate(coefficient_of_variation=sqrt(error_variance)/campaign_effect) |> 
-                mutate(standardized_CV=(coefficient_of_variation-mean(coefficient_of_variation))/sd(coefficient_of_variation))}
+                mutate(standardized_CV=scale(coefficient_of_variation))}
 
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
 CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
@@ -246,10 +246,6 @@ get_quality <- function(data_sub, asreml_res_h){
 ```
 
 ```{r}
-data_sub_HT
-```
-
-```{r}
 quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
 ```
 
@@ -308,6 +304,7 @@ BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |>
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
 
 write_csv(BLUE_all,"CREA_wheat_BLUE_values.csv")
+summary(BLUE_all)
 ```
 
 ```{r}
