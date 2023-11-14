@@ -67,22 +67,20 @@ options(repr.plot.width=12, repr.plot.height=7)
 visualise_trait <- function(data_sub, geom){
                     trait <- colnames(data_sub)[3]
                     trait_title <- trait |> str_replace_all("_", " ") |> str_to_title()
-                    plot(ggplot(data_sub, aes(campaign,.data[[trait]])) + geom_jitter(na.rm=TRUE)
+                    plot(ggplot(data_sub, aes(campaign,.data[[trait]])) + geom_jitter()
                          + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=0.5))
                          + labs(title = trait_title, subtitle = "Trait values per campaign",))
-                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom(na.rm=TRUE)
+                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom
                          + labs(title = trait_title, subtitle = "Distribution of trait values",))}
-```
 
-```{r}
-data_sub_HT |> visualise_trait(geom_density)
-data_sub_PH |> visualise_trait(geom_density)
-data_sub_TKW |> visualise_trait(geom_density)
-data_sub_PM |> visualise_trait(geom_histogram)
-data_sub_LR |> visualise_trait(geom_histogram)
-data_sub_ST |> visualise_trait(geom_histogram)
-data_sub_PC |> visualise_trait(geom_density)
-data_sub_SV |> visualise_trait(geom_density)
+data_sub_HT |> visualise_trait(geom_density())
+data_sub_PH |> visualise_trait(geom_density())
+data_sub_TKW |> visualise_trait(geom_density())
+data_sub_PM |> visualise_trait(geom_histogram(bins=10))
+data_sub_LR |> visualise_trait(geom_histogram(bins=10))
+data_sub_ST |> visualise_trait(geom_histogram(bins=10))
+data_sub_PC |> visualise_trait(geom_density())
+data_sub_SV |> visualise_trait(geom_density())
 ```
 
 ## Extract and format the campaign effects
@@ -267,43 +265,20 @@ make_BH_multtest <- function(asreml_res){
             rawp_BHStud <- 2 * (1 - pnorm(abs(residual/MAD)))
             test_BHStud <- mt.rawp2adjp(rawp_BHStud, proc=c("Holm"))
             result_df <- tibble(adjp=test_BHStud[[1]][,1], bholm=test_BHStud[[1]][,2], index=test_BHStud[[2]]) |>
-                    mutate(is_outlier = bholm < 0.05) |> arrange(index) |> mutate(std_residual = scale(residual))
+                    mutate(is_outlier = bholm < 0.05) |> arrange(index) |> mutate(std_residual = scale(residual)[,1])
             cat(sum(result_df$is_outlier), "outlier value(s) detected for trait", trait_title)
             plot(ggplot(result_df, aes(index,std_residual, color=is_outlier)) + geom_jitter()
                  + scale_colour_manual(values = c("TRUE" = "#A51D2D", "FALSE" = "#26A269"))
                  + labs(title = trait_title, subtitle = "Outlier detection with Bonferroni–Holm method"))
             return(result_df |> as.data.frame())}
-```
 
-```{r}
 result_BH_HT <- make_BH_multtest(asreml_res_HT)
-```
-
-```{r}
 result_BH_PH <- make_BH_multtest(asreml_res_PH)
-```
-
-```{r}
 result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
-```
-
-```{r}
 result_BH_PM <- make_BH_multtest(asreml_res_PM)
-```
-
-```{r}
 result_BH_LR <- make_BH_multtest(asreml_res_LR)
-```
-
-```{r}
 result_BH_ST <- make_BH_multtest(asreml_res_ST)
-```
-
-```{r}
 result_BH_PC <- make_BH_multtest(asreml_res_PC)
-```
-
-```{r}
 result_BH_SV <- make_BH_multtest(asreml_res_SV)
 ```
 
@@ -452,22 +427,23 @@ asreml_data_SV <- asreml(sds_sedimentation_volume ~accenumb, random = ~campaign,
 
 ```{r}
 get_BLUEs <- function(asreml_data){
+                            trait <- colnames(asreml_data$mf)[3]
                             intercept_index <- nrow(asreml_data$coeff$fixed)
                             intercept <- asreml_data$coeff$fixed[intercept_index]
                             BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
                             return(BLUE |> as.data.frame() |>
                                     rownames_to_column() |>
                                     mutate(genotype=str_split_i(rowname,"_", -1)) |> #assuming there is no underscore in the accession numbers
-                                    select(genotype, BLUE))}
+                                    select(genotype, BLUE) |> rename_with(~paste(trait, .x, sep="_"), 2))}
 
-BLUEs_HT <- get_BLUEs(asreml_data_HT) |> rename("days_to_heading_BLUE"="BLUE")
-BLUEs_PH <- get_BLUEs(asreml_data_PH) |> rename("plant_height_BLUE"="BLUE")
-BLUEs_TKW <- get_BLUEs(asreml_data_TKW) |> rename("thousand_kernel_weight_BLUE"="BLUE")
-BLUEs_PM <- get_BLUEs(asreml_data_PM) |> rename("powdery_mildew_BLUE"="BLUE")
-BLUEs_LR <- get_BLUEs(asreml_data_LR) |> rename("leaf_rust_BLUE"="BLUE")
-BLUEs_ST <- get_BLUEs(asreml_data_ST) |> rename("septoria_tritici_ssp_BLUE"="BLUE")
-BLUEs_PC <- get_BLUEs(asreml_data_PC) |> rename("protein_content_BLUE"="BLUE")
-BLUEs_SV <- get_BLUEs(asreml_data_SV) |> rename("sds_sedimentation_volume_BLUE"="BLUE")
+BLUEs_HT <- get_BLUEs(asreml_data_HT)
+BLUEs_PH <- get_BLUEs(asreml_data_PH)
+BLUEs_TKW <- get_BLUEs(asreml_data_TKW)
+BLUEs_PM <- get_BLUEs(asreml_data_PM)
+BLUEs_LR <- get_BLUEs(asreml_data_LR)
+BLUEs_ST <- get_BLUEs(asreml_data_ST)
+BLUEs_PC <- get_BLUEs(asreml_data_PC)
+BLUEs_SV <- get_BLUEs(asreml_data_SV)
 
 
 BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
