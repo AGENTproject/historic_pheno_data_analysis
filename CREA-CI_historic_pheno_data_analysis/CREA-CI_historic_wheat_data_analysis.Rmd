@@ -106,10 +106,10 @@ asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random =
 ```
 
 ```{r}
-#asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
-#                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-#                              data = data_sub_PM)
-# fails with error: Singularities in the average information matrix.
+data_sub_PM <- data_sub_PM |> filter(campaign != "2013-2014") # this campaign has all PM values equal to zero and is excluded to enable fitting the model. 
+asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_PM)
 ```
 
 ```{r}
@@ -148,6 +148,7 @@ get_campaign_effect <- function(asreml_campaign){
 campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
 campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
 campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
+campaign_effect_PM <- get_campaign_effect(asreml_campaign_PM)
 campaign_effect_LR <- get_campaign_effect(asreml_campaign_LR)
 campaign_effect_ST <- get_campaign_effect(asreml_campaign_ST)
 campaign_effect_PC <- get_campaign_effect(asreml_campaign_PC)
@@ -164,6 +165,7 @@ get_error_var <- function(asreml_campaign){
 error_var_HT <- get_error_var(asreml_campaign_HT)
 error_var_PH <- get_error_var(asreml_campaign_PH)
 error_var_TKW <- get_error_var(asreml_campaign_TKW)
+error_var_PM <- get_error_var(asreml_campaign_PM)
 error_var_LR <- get_error_var(asreml_campaign_LR)
 error_var_ST <- get_error_var(asreml_campaign_ST)
 error_var_PC <- get_error_var(asreml_campaign_PC)
@@ -176,11 +178,12 @@ error_var_SV <- get_error_var(asreml_campaign_SV)
 make_CV_df <- function(campaign_effect, error_var){
                 tibble(campaign_effect, error_var) |> 
                 mutate(coefficient_of_variation=sqrt(error_variance)/campaign_effect) |> 
-                mutate(standardized_CV=scale(coefficient_of_variation))}
+                mutate(standardized_CV=scale(coefficient_of_variation)[,1])}
 
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
 CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
 CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
+CV_df_PM <- make_CV_df(campaign_effect_PM, error_var_PM)
 CV_df_LR <- make_CV_df(campaign_effect_LR, error_var_LR)
 CV_df_ST <- make_CV_df(campaign_effect_ST, error_var_ST)
 CV_df_PC <- make_CV_df(campaign_effect_PC, error_var_PC)
@@ -199,6 +202,7 @@ correct_I <- function(data_sub, CV_df){
 data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
 data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
 data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
+data_corrected_PM_I <- data_sub_PM |> correct_I(CV_df_PM)
 data_corrected_LR_I <- data_sub_LR |> correct_I(CV_df_LR)
 data_corrected_ST_I <- data_sub_ST |> correct_I(CV_df_ST)
 data_corrected_PC_I <- data_sub_PC |> correct_I(CV_df_PC)
@@ -223,6 +227,12 @@ asreml_res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign,
 asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
                   na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                   data = data_corrected_TKW_I)
+```
+
+```{r}
+asreml_res_PM <- asreml(fixed = powdery_mildew ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_PM_I)
 ```
 
 ```{r}
@@ -278,6 +288,10 @@ result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
 ```
 
 ```{r}
+result_BH_PM <- make_BH_multtest(asreml_res_PM)
+```
+
+```{r}
 result_BH_LR <- make_BH_multtest(asreml_res_LR)
 ```
 
@@ -302,6 +316,7 @@ correct_II <- function(data_corrected_I, result_BH){
 data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
 data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
 data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
+data_corrected_PM_II <- data_corrected_PM_I |> correct_II(result_BH_PM)
 data_corrected_LR_II <- data_corrected_LR_I |> correct_II(result_BH_LR)
 data_corrected_ST_II <- data_corrected_ST_I |> correct_II(result_BH_ST)
 data_corrected_PC_II <- data_corrected_PC_I |> correct_II(result_BH_PC)
@@ -326,6 +341,12 @@ asreml_res_h_PH <- asreml(plant_height ~1, random = ~accenumb + campaign,
 asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
                     na.action = na.method(x="omit", y="omit"),
                     residual = ~dsum( ~id(units) | campaign), data = data_corrected_TKW_II)
+```
+
+```{r}
+asreml_res_h_PM <- asreml(powdery_mildew ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PM_II)
 ```
 
 ```{r}
@@ -366,12 +387,13 @@ get_quality <- function(data_sub, asreml_res_h){
 quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
 quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
 quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
+quality_PM <- get_quality(data_sub_PM, asreml_res_h_PM)
 quality_LR <- get_quality(data_sub_LR, asreml_res_h_LR)
 quality_ST <- get_quality(data_sub_ST, asreml_res_h_ST)
 quality_PC <- get_quality(data_sub_PC, asreml_res_h_PC)
 quality_SV <- get_quality(data_sub_SV, asreml_res_h_SV)
 
-quality_all = bind_rows(quality_HT, quality_PH, quality_TKW, quality_LR, quality_ST, quality_PC, quality_SV) |> 
+quality_all = bind_rows(quality_HT, quality_PH, quality_TKW, quality_PM, quality_LR, quality_ST, quality_PC, quality_SV) |> 
                     mutate(across(-1, \(x) round(x, 3)))
 write_csv(quality_all,"CREA_wheat_data_quality.csv")
 ```
@@ -394,6 +416,12 @@ asreml_data_PH <- asreml(plant_height ~accenumb, random = ~campaign,
 asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
                           na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                           data = data_corrected_TKW_II)
+```
+
+```{r}
+asreml_data_PM <- asreml(powdery_mildew ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PM_II)
 ```
 
 ```{r}
@@ -435,6 +463,7 @@ get_BLUEs <- function(asreml_data){
 BLUEs_HT <- get_BLUEs(asreml_data_HT) |> rename("days_to_heading_BLUE"="BLUE")
 BLUEs_PH <- get_BLUEs(asreml_data_PH) |> rename("plant_height_BLUE"="BLUE")
 BLUEs_TKW <- get_BLUEs(asreml_data_TKW) |> rename("thousand_kernel_weight_BLUE"="BLUE")
+BLUEs_PM <- get_BLUEs(asreml_data_PM) |> rename("powdery_mildew_BLUE"="BLUE")
 BLUEs_LR <- get_BLUEs(asreml_data_LR) |> rename("leaf_rust_BLUE"="BLUE")
 BLUEs_ST <- get_BLUEs(asreml_data_ST) |> rename("septoria_tritici_ssp_BLUE"="BLUE")
 BLUEs_PC <- get_BLUEs(asreml_data_PC) |> rename("protein_content_BLUE"="BLUE")
@@ -444,6 +473,7 @@ BLUEs_SV <- get_BLUEs(asreml_data_SV) |> rename("sds_sedimentation_volume_BLUE"=
 BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
                         left_join(BLUEs_PH, by="genotype") |> 
                         left_join(BLUEs_TKW, by="genotype") |> 
+                        left_join(BLUEs_PM, by="genotype") |>
                         left_join(BLUEs_LR, by="genotype") |> 
                         left_join(BLUEs_ST, by="genotype") |> 
                         left_join(BLUEs_PC, by="genotype") |> 
