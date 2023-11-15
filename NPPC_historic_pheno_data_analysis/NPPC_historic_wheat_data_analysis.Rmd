@@ -1,0 +1,463 @@
+---
+title: An R Markdown document converted from "NPPC_historic_wheat_data_analysis.ipynb"
+output: html_document
+---
+
+# NPPC historical phenotypic wheat data analysis
+
+## Load packages and data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(multtest)
+library(asreml)
+```
+
+```{r}
+preprocess <- function(data_file){
+                experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
+                observations <- read_xlsx(data_file, sheet = "Observed scores") |> rename_with(~tolower(gsub(" ", "_", .x)))
+                return(observations |> left_join(experiments, by = "experiment_id") |>
+                        unite("campaign", c(year_start,year_end), sep="-") |>
+                        select(accenumb, campaign, days_to_heading:last(colnames(observations))) |>
+                        drop_na(accenumb, campaign) |> distinct() |> arrange(campaign, accenumb))}
+```
+
+```{r}
+data_total_winter <- preprocess("Historic_Wheat_W_NPPC.xlsx")
+write_csv(data_total_winter, "NPPC_winter_wheat.csv")
+genotypes_w <- distinct(data_total_winter["accenumb"]) |> rename("genotype" = "accenumb")
+cat("Winter Wheat:\n", nrow(data_total_winter), "observations\n", nrow(genotypes_w), "genotypes\n", nrow(distinct(data_total_winter["campaign"])), "campaigns\n\n")
+summary(data_total_winter[-c(1,2)])
+```
+
+```{r}
+data_total_spring <- preprocess("Historic_Wheat_S_NPPC.xlsx")
+write_csv(data_total_spring, "NPPC_spring_wheat.csv")
+genotypes_s <- distinct(data_total_spring["accenumb"]) |> rename("genotype" = "accenumb")
+cat("Spring Wheat:\n", nrow(data_total_spring), "observations\n", nrow(genotypes_s), "genotypes\n", nrow(distinct(data_total_spring["campaign"])), "campaigns\n\n")
+summary(data_total_spring[-c(1,2)])
+```
+
+## Subset data, remove missing values and singletons, make factors
+
+```{r}
+make_data_sub <- function(full_df, trait){
+                    data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> distinct() |>
+                    group_by(accenumb) |> filter(n()>1) |> group_by(campaign) |> filter(n()>1) |> 
+                    mutate_at(vars(accenumb, campaign), factor)
+                    cat(nrow(data_sub), trait, "rows kept\n") 
+                    return(as.data.frame(data_sub))}
+```
+
+```{r}
+cat("Winter:\n")
+data_sub_WW_HT <- data_total_winter |> make_data_sub("days_to_heading")
+data_sub_WW_PH <- data_total_winter |> make_data_sub("plant_height")
+data_sub_WW_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight")
+```
+
+```{r}
+cat("Spring:\n")
+data_sub_SW_HT <- data_total_spring |> make_data_sub("days_to_heading")
+data_sub_SW_PH <- data_total_spring |> make_data_sub("plant_height")
+data_sub_SW_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight")
+```
+
+## Visualise trait values 
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=7)
+visualise_trait <- function(data_sub, geom){
+                    trait <- colnames(data_sub)[3]
+                    trait_title <- trait |> str_replace_all("_", " ") |> str_to_title()
+                    plot(ggplot(data_sub, aes(campaign,.data[[trait]])) + geom_jitter()
+                         + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=0.5))
+                         + labs(title = trait_title, subtitle = "Trait values per campaign",))
+                    plot(ggplot(data_sub, aes(.data[[trait]])) + geom
+                         + labs(title = trait_title, subtitle = "Distribution of trait values",))}
+```
+
+```{r}
+data_sub_WW_HT |> visualise_trait(geom_density())
+data_sub_WW_PH |> visualise_trait(geom_density())
+data_sub_WW_TKW |> visualise_trait(geom_density())
+```
+
+```{r}
+data_sub_SW_HT |> visualise_trait(geom_density())
+data_sub_SW_PH |> visualise_trait(geom_density())
+data_sub_SW_TKW |> visualise_trait(geom_density())
+```
+
+## Extract and format the campaign effects
+
+```{r}
+asreml_campaign_WW_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+                             data = data_sub_WW_HT)
+```
+
+```{r}
+asreml_campaign_WW_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_WW_PH)
+```
+
+```{r}
+asreml_campaign_WW_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_WW_TKW)
+```
+
+```{r}
+# asreml_campaign_SW_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+#                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+#                              data = data_sub_SW_HT)
+# # Error: The estimation was aborted; too many exceptions.
+```
+
+```{r}
+asreml_campaign_SW_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_SW_PH)
+```
+
+```{r}
+asreml_campaign_SW_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_SW_TKW)
+```
+
+```{r}
+get_campaign_effect <- function(asreml_campaign){
+                        intercept_index <- nrow(asreml_campaign$coeff$fixed)
+                        intercept <- asreml_campaign$coeff$fixed[intercept_index]
+                        campaign_effect <- asreml_campaign$coeff$fixed[-intercept_index,] + intercept
+                        return(campaign_effect |> as.data.frame() |> rownames_to_column() |> 
+                                mutate(campaign = str_sub(rowname,10)) |> 
+                                select(campaign, campaign_effect))}
+```
+
+```{r}
+campaign_effect_WW_HT <- get_campaign_effect(asreml_campaign_WW_HT)
+campaign_effect_WW_PH <- get_campaign_effect(asreml_campaign_WW_PH)
+campaign_effect_WW_TKW <- get_campaign_effect(asreml_campaign_WW_TKW)
+```
+
+```{r}
+#campaign_effect_SW_HT <- get_campaign_effect(asreml_campaign_SW_HT)
+campaign_effect_SW_PH <- get_campaign_effect(asreml_campaign_SW_PH)
+campaign_effect_SW_TKW <- get_campaign_effect(asreml_campaign_SW_TKW)
+```
+
+## Extract heterogeneous error variances
+
+```{r}
+get_error_var <- function(asreml_campaign){
+                    summary(asreml_campaign)$varcomp |> slice(2:n()) |> select(std.error) |> 
+                    as_tibble() |> rename("error_variance"="std.error")}
+```
+
+```{r}
+error_var_WW_HT <- get_error_var(asreml_campaign_WW_HT)
+error_var_WW_PH <- get_error_var(asreml_campaign_WW_PH)
+error_var_WW_TKW <- get_error_var(asreml_campaign_WW_TKW)
+```
+
+```{r}
+#error_var_SW_HT <- get_error_var(asreml_campaign_SW_HT)
+error_var_SW_PH <- get_error_var(asreml_campaign_SW_PH)
+error_var_SW_TKW <- get_error_var(asreml_campaign_SW_TKW)
+```
+
+## Calculate and standardize the coefficient of variation (CV)
+
+```{r}
+make_CV_df <- function(campaign_effect, error_var){
+                tibble(campaign_effect, error_var) |> 
+                mutate(coefficient_of_variation=sqrt(error_variance)/campaign_effect) |> 
+                mutate(standardized_CV=scale(coefficient_of_variation)[,1])}
+```
+
+```{r}
+CV_df_WW_HT <- make_CV_df(campaign_effect_WW_HT, error_var_WW_HT)
+CV_df_WW_PH <- make_CV_df(campaign_effect_WW_PH, error_var_WW_PH)
+CV_df_WW_TKW <- make_CV_df(campaign_effect_WW_TKW, error_var_WW_TKW)
+```
+
+```{r}
+#CV_df_SW_HT <- make_CV_df(campaign_effect_SW_HT, error_var_SW_HT)
+CV_df_SW_PH <- make_CV_df(campaign_effect_SW_PH, error_var_SW_PH)
+CV_df_SW_TKW <- make_CV_df(campaign_effect_SW_TKW, error_var_SW_TKW)
+```
+
+## Remove outlier campaigns
+
+```{r}
+correct_I <- function(data_sub, CV_df){
+                        outlier_campaigns <- CV_df |> filter(standardized_CV > 3.5) |> select(campaign)
+                        cat(nrow(outlier_campaigns), "outlier campaign(s) detected for trait", colnames(data_sub)[3], "\n")
+                        return(data_sub |> filter(! campaign %in% outlier_campaigns) |>
+                               group_by(campaign) |> filter(n()>1) |> ungroup())}
+```
+
+```{r}
+data_corrected_WW_HT_I <- data_sub_WW_HT |> correct_I(CV_df_WW_HT)
+data_corrected_WW_PH_I <- data_sub_WW_PH |> correct_I(CV_df_WW_PH)
+data_corrected_WW_TKW_I <- data_sub_WW_TKW |> correct_I(CV_df_WW_TKW)
+```
+
+```{r}
+#data_corrected_SW_HT_I <- data_sub_SW_HT |> correct_I(CV_df_SW_HT)
+data_corrected_SW_PH_I <- data_sub_SW_PH |> correct_I(CV_df_SW_PH)
+data_corrected_SW_TKW_I <- data_sub_SW_TKW |> correct_I(CV_df_SW_TKW)
+```
+
+## Residuals
+
+```{r}
+asreml_res_WW_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_WW_HT_I)
+```
+
+```{r}
+asreml_res_WW_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_WW_PH_I)
+```
+
+```{r}
+asreml_res_WW_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_WW_TKW_I)
+```
+
+```{r}
+# asreml_res_SW_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+#                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+#                  data = data_corrected_SW_HT_I)
+```
+
+```{r}
+asreml_res_SW_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_SW_PH_I)
+```
+
+```{r}
+asreml_res_SW_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_SW_TKW_I)
+```
+
+```{r}
+make_BH_multtest <- function(asreml_res){
+            trait_title <- colnames(asreml_res$mf)[3] |> str_replace_all("_", " ") |> str_to_title()
+            residual <- asreml_res$residuals
+            MAD <- 1.4826*median(abs(residual-median(residual))) #approx constant https://en.wikipedia.org/wiki/Median_absolute_deviation#Relation_to_standard_deviation
+            rawp_BHStud <- 2 * (1 - pnorm(abs(residual/MAD)))
+            test_BHStud <- mt.rawp2adjp(rawp_BHStud, proc=c("Holm"))
+            result_df <- tibble(adjp=test_BHStud[[1]][,1], bholm=test_BHStud[[1]][,2], index=test_BHStud[[2]]) |>
+                    mutate(is_outlier = bholm < 0.05) |> arrange(index) |> mutate(std_residual = scale(residual)[,1])
+            cat(sum(result_df$is_outlier), "outlier value(s) detected for trait", trait_title, "\n")
+            plot(ggplot(result_df, aes(index,std_residual, color=is_outlier)) + geom_jitter()
+                 + scale_colour_manual(values = c("TRUE" = "#A51D2D", "FALSE" = "#26A269"))
+                 + labs(title = trait_title, subtitle = "Outlier detection with Bonferroni–Holm method"))
+            return(result_df |> as.data.frame())}
+```
+
+```{r}
+result_BH_WW_HT <- make_BH_multtest(asreml_res_WW_HT)
+result_BH_WW_PH <- make_BH_multtest(asreml_res_WW_PH)
+result_BH_WW_TKW <- make_BH_multtest(asreml_res_WW_TKW)
+```
+
+```{r}
+#result_BH_SW_HT <- make_BH_multtest(asreml_res_SW_HT)
+result_BH_SW_PH <- make_BH_multtest(asreml_res_SW_PH)
+result_BH_SW_TKW <- make_BH_multtest(asreml_res_SW_TKW)
+```
+
+```{r}
+correct_II <- function(data_corrected_I, result_BH){
+                        data_corrected_I[result_BH[which(!result_BH$is_outlier),"index"],] |> 
+                        group_by(accenumb) |> filter(n() > 1) |> group_by(campaign) |> filter(n() > 1) |> 
+                        arrange(campaign, accenumb) |> as.data.frame() |> droplevels()}
+```
+
+```{r}
+data_corrected_WW_HT_II <- data_corrected_WW_HT_I |> correct_II(result_BH_WW_HT)
+data_corrected_WW_PH_II <- data_corrected_WW_PH_I |> correct_II(result_BH_WW_PH)
+data_corrected_WW_TKW_II <- data_corrected_WW_TKW_I |> correct_II(result_BH_WW_TKW)
+```
+
+```{r}
+#data_corrected_SW_HT_II <- data_corrected_SW_HT_I |> correct_II(result_BH_SW_HT)
+data_corrected_SW_PH_II <- data_corrected_SW_PH_I |> correct_II(result_BH_SW_PH)
+data_corrected_SW_TKW_II <- data_corrected_SW_TKW_I |> correct_II(result_BH_SW_TKW)
+```
+
+## Calculate heritability
+
+```{r}
+asreml_res_h_WW_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_WW_HT_II)
+```
+
+```{r}
+asreml_res_h_WW_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_WW_PH_II)
+```
+
+```{r}
+asreml_res_h_WW_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"),
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_WW_TKW_II)
+```
+
+```{r}
+# asreml_res_h_SW_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+#                    na.action = na.method(x="omit", y="omit"), 
+#                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_SW_HT_II)
+```
+
+```{r}
+asreml_res_h_SW_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_SW_PH_II)
+```
+
+```{r}
+# asreml_res_h_SW_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+#                     na.action = na.method(x="omit", y="omit"),
+#                     residual = ~dsum( ~id(units) | campaign), data = data_corrected_SW_TKW_II)
+# # Error: Singularities in the average information matrix.
+```
+
+```{r}
+get_quality <- function(data_sub, asreml_res_h){
+                trait <- colnames(data_sub)[3]
+                varcomp <- summary(asreml_res_h)$varcomp
+                var_G <- varcomp[2,"component"]
+                var_E <- mean(varcomp[3:nrow(varcomp),"component"])
+                no_campaigns <- mean(table(data_sub$accenumb[!is.na(data_sub[,trait])]))
+                heritability <- var_G/(var_G+(var_E/no_campaigns))
+                cat(colnames(data_sub)[3], "heritability:", round(heritability*100,1), "%\n")
+                return(tibble(trait, heritability, var_G, var_E, no_campaigns))}
+```
+
+```{r}
+quality_WW_HT <- get_quality(data_sub_WW_HT, asreml_res_h_WW_HT)
+quality_WW_PH <- get_quality(data_sub_WW_PH, asreml_res_h_WW_PH)
+quality_WW_TKW <- get_quality(data_sub_WW_TKW, asreml_res_h_WW_TKW)
+quality_WW_all <- bind_rows(quality_WW_HT, quality_WW_PH, quality_WW_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+write_csv(quality_WW_all,"NPPC_winter_wheat_data_quality.csv")
+```
+
+```{r}
+#quality_SW_HT <- get_quality(data_sub_SW_HT, asreml_res_h_SW_HT)
+quality_SW_PH <- get_quality(data_sub_SW_PH, asreml_res_h_SW_PH)
+#quality_SW_TKW <- get_quality(data_sub_SW_TKW, asreml_res_h_SW_TKW)
+#quality_SW_all <- bind_rows(quality_SW_HT, quality_SW_PH, quality_SW_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+#write_csv(quality_SW_all,"NPPC_spring_wheat_data_quality.csv")
+```
+
+## Run linear mixed model with outlier corrected data
+
+```{r}
+asreml_data_WW_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_WW_HT_II)
+```
+
+```{r}
+asreml_data_WW_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_WW_PH_II)
+```
+
+```{r}
+# asreml_data_WW_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+#                           na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+#                           data = data_corrected_WW_TKW_II)
+# # Error: The estimation was aborted; too many exceptions.
+```
+
+```{r}
+# asreml_data_SW_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+#                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+#                          data = data_corrected_SW_HT_II)
+```
+
+```{r}
+asreml_data_SW_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_SW_PH_II)
+```
+
+```{r}
+# asreml_data_SW_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+#                           na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+#                           data = data_corrected_SW_TKW_II)
+# # Error: Singularities in the average information matrix.
+```
+
+## Extract BLUEs and create output file
+
+```{r}
+get_BLUEs <- function(asreml_data){
+                            trait <- colnames(asreml_data$mf)[3]
+                            intercept_index <- nrow(asreml_data$coeff$fixed)
+                            intercept <- asreml_data$coeff$fixed[intercept_index]
+                            BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
+                            return(BLUE |> as.data.frame() |>
+                                    rownames_to_column() |>
+                                    mutate(genotype=str_split_i(rowname,"_", -1)) |> #assuming there is no underscore in the accession numbers
+                                    select(genotype, BLUE) |> rename_with(~paste(trait, .x, sep="_"), 2))}
+```
+
+```{r}
+BLUEs_WW_HT <- get_BLUEs(asreml_data_WW_HT)
+BLUEs_WW_PH <- get_BLUEs(asreml_data_WW_PH)
+#BLUEs_WW_TKW <- get_BLUEs(asreml_data_WW_TKW)
+
+BLUE_WW_all <- genotypes_w |> 
+                        left_join(BLUEs_WW_HT, by="genotype") |> 
+                        left_join(BLUEs_WW_PH, by="genotype") |> 
+                        #left_join(BLUEs_WW_TKW, by="genotype") |> 
+                        arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
+
+write_csv(BLUE_WW_all,"NPPC_winter_wheat_BLUE_values.csv")
+summary(BLUE_WW_all)
+```
+
+```{r}
+#BLUEs_SW_HT <- get_BLUEs(asreml_data_SW_HT)
+BLUEs_SW_PH <- get_BLUEs(asreml_data_SW_PH)
+#BLUEs_SW_TKW <- get_BLUEs(asreml_data_SW_TKW)
+
+
+BLUE_SW_all <- genotypes_s |> 
+                        #left_join(BLUEs_SW_HT, by="genotype") |> 
+                        left_join(BLUEs_SW_PH, by="genotype") |> 
+                        #left_join(BLUEs_SW_TKW, by="genotype") |> 
+                        arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
+
+write_csv(BLUE_SW_all,"NPPC_spring_wheat_BLUE_values.csv")
+summary(BLUE_SW_all)
+```
+
+```{r}
+library(rmarkdown)
+convert_ipynb("NPPC_historic_wheat_data_analysis.ipynb")
+```
+
+```{r}
+sessionInfo()
+```
+
