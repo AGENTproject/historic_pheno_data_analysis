@@ -19,9 +19,9 @@ preprocess <- function(data_file){
                 experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
                 observations <- read_xlsx(data_file, sheet = "Observed scores") |> rename_with(~tolower(gsub(" ", "_", .x)))
                 return(observations |> left_join(experiments, by = "experiment_id") |>
-                        unite("campaign", c(year_start,year_end), sep="-") |>
-                        select(accenumb, campaign, plant_height:thousand_kernel_weight) |>
-                        drop_na(accenumb, campaign) |> distinct() |> arrange(campaign, accenumb))}
+                       unite("campaign", c(year_start,year_end), sep="-") |>
+                       select(accenumb:campaign) |> drop_na(accenumb, campaign) |> 
+                       distinct() |> arrange(campaign, accenumb))}
 ```
 
 ```{r}
@@ -30,6 +30,10 @@ write_csv(data_total, "INIA_wheat.csv")
 genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
 cat("Wheat data:\n", nrow(data_total), "observations\n", nrow(genotypes), "genotypes\n", nrow(distinct(data_total["campaign"])), "campaigns\n\n")
 summary(data_total[-c(1,2)])
+```
+
+```{r}
+aaa
 ```
 
 ## Subset data, remove missing values and singletons, make factors
@@ -190,7 +194,13 @@ make_BH_multtest <- function(asreml_res){
 
 ```{r}
 result_BH_HT <- make_BH_multtest(asreml_res_HT)
+```
+
+```{r}
 result_BH_PH <- make_BH_multtest(asreml_res_PH)
+```
+
+```{r}
 result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
 ```
 
