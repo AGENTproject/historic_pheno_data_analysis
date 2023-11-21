@@ -153,8 +153,8 @@ asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campa
 quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
 quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
 quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
-quality_WW_all <- bind_rows(quality_HT, quality_PH, quality_TKW) |> mutate(across(-1, \(x) round(x, 3)))
-write_csv(quality_WW_all,"INIA_wheat_data_quality.csv")
+quality_all <- bind_rows(quality_HT, quality_PH, quality_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+write_csv(quality_all,"INIA_wheat_data_quality.csv")
 ```
 
 ## Run linear mixed model with outlier corrected data
@@ -180,30 +180,18 @@ asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign,
 ## Extract BLUEs and create output file
 
 ```{r}
-get_BLUEs <- function(asreml_data){
-                            trait <- colnames(asreml_data$mf)[3]
-                            intercept_index <- nrow(asreml_data$coeff$fixed)
-                            intercept <- asreml_data$coeff$fixed[intercept_index]
-                            BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
-                            return(BLUE |> as.data.frame() |>
-                                    rownames_to_column() |>
-                                    mutate(genotype=str_split_i(rowname,"_", -1)) |> #assuming there is no underscore in the accession numbers
-                                    select(genotype, BLUE) |> rename_with(~paste(trait, .x, sep="_"), 2))}
-```
-
-```{r}
 BLUEs_HT <- get_BLUEs(asreml_data_HT)
 BLUEs_PH <- get_BLUEs(asreml_data_PH)
 BLUEs_TKW <- get_BLUEs(asreml_data_TKW)
 
-BLUE_WW_all <- genotypes |> 
+BLUE_all <- genotypes |> 
                         left_join(BLUEs_HT, by="genotype") |> 
                         left_join(BLUEs_PH, by="genotype") |> 
                         left_join(BLUEs_TKW, by="genotype") |> 
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
 
-write_csv(BLUE_WW_all,"INIA_wheat_BLUE_values.csv")
-summary(BLUE_WW_all)
+write_csv(BLUE_all,"INIA_wheat_BLUE_values.csv")
+summary(BLUE_all)
 ```
 
 ```{r}
