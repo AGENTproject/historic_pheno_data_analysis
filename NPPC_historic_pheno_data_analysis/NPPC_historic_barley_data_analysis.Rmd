@@ -1,0 +1,353 @@
+---
+title: An R Markdown document converted from "NPPC_historic_barley_data_analysis.ipynb"
+output: html_document
+---
+
+# NPPC historical phenotypic barley data analysis
+
+## Load packages, custom functions and data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(multtest)
+library(asreml)
+
+source("../custom_functions.r")
+```
+
+```{r}
+data_total_winter <- preprocess("Historic_Barley_W_NPPC.xlsx")
+write_csv(data_total_winter, "NPPC_winter_barley.csv")
+genotypes_w <- distinct(data_total_winter["accenumb"]) |> rename("genotype" = "accenumb")
+cat("Winter Barley:\n", nrow(data_total_winter), "observations\n", nrow(genotypes_w), "genotypes\n", nrow(distinct(data_total_winter["campaign"])), "campaigns\n\n")
+summary(data_total_winter[c("days_to_heading", "plant_height", "thousand_kernel_weight")])
+```
+
+```{r}
+data_total_spring <- preprocess("Historic_Barley_S_NPPC.xlsx")
+write_csv(data_total_spring, "NPPC_spring_barley.csv")
+genotypes_s <- distinct(data_total_spring["accenumb"]) |> rename("genotype" = "accenumb")
+cat("Spring Barley:\n", nrow(data_total_spring), "observations\n", nrow(genotypes_s), "genotypes\n", nrow(distinct(data_total_spring["campaign"])), "campaigns\n\n")
+summary(data_total_spring[c("days_to_heading", "plant_height", "thousand_kernel_weight")])
+```
+
+## Subset data, remove missing values and singletons, make factors
+
+```{r}
+cat("Winter:\n")
+data_sub_WB_HT <- data_total_winter |> make_data_sub("days_to_heading")
+data_sub_WB_PH <- data_total_winter |> make_data_sub("plant_height")
+data_sub_WB_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight")
+```
+
+```{r}
+cat("Spring:\n")
+data_sub_SB_HT <- data_total_spring |> make_data_sub("days_to_heading")
+data_sub_SB_PH <- data_total_spring |> make_data_sub("plant_height")
+data_sub_SB_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight")
+```
+
+## Visualise trait values 
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=7)
+data_sub_WB_HT |> visualise_trait(geom_density())
+data_sub_WB_PH |> visualise_trait(geom_density())
+data_sub_WB_TKW |> visualise_trait(geom_density())
+```
+
+```{r}
+data_sub_SB_HT |> visualise_trait(geom_density())
+data_sub_SB_PH |> visualise_trait(geom_density())
+data_sub_SB_TKW |> visualise_trait(geom_density())
+```
+
+## Extract and format the campaign effects
+
+```{r}
+asreml_campaign_WB_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+                             data = data_sub_WB_HT)
+```
+
+```{r}
+asreml_campaign_WB_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_WB_PH)
+```
+
+```{r}
+asreml_campaign_WB_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_WB_TKW)
+```
+
+```{r}
+asreml_campaign_SB_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+                              data = data_sub_SB_HT)
+```
+
+```{r}
+asreml_campaign_SB_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_SB_PH)
+```
+
+```{r}
+asreml_campaign_SB_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_SB_TKW)
+```
+
+```{r}
+campaign_effect_WB_HT <- get_campaign_effect(asreml_campaign_WB_HT)
+campaign_effect_WB_PH <- get_campaign_effect(asreml_campaign_WB_PH)
+campaign_effect_WB_TKW <- get_campaign_effect(asreml_campaign_WB_TKW)
+```
+
+```{r}
+campaign_effect_SB_HT <- get_campaign_effect(asreml_campaign_SB_HT)
+campaign_effect_SB_PH <- get_campaign_effect(asreml_campaign_SB_PH)
+campaign_effect_SB_TKW <- get_campaign_effect(asreml_campaign_SB_TKW)
+```
+
+## Extract heterogeneous error variances
+
+```{r}
+error_var_WB_HT <- get_error_var(asreml_campaign_WB_HT)
+error_var_WB_PH <- get_error_var(asreml_campaign_WB_PH)
+error_var_WB_TKW <- get_error_var(asreml_campaign_WB_TKW)
+```
+
+```{r}
+error_var_SB_HT <- get_error_var(asreml_campaign_SB_HT)
+error_var_SB_PH <- get_error_var(asreml_campaign_SB_PH)
+error_var_SB_TKW <- get_error_var(asreml_campaign_SB_TKW)
+```
+
+## Calculate and standardize the coefficient of variation (CV)
+
+```{r}
+CV_df_WB_HT <- make_CV_df(campaign_effect_WB_HT, error_var_WB_HT)
+CV_df_WB_PH <- make_CV_df(campaign_effect_WB_PH, error_var_WB_PH)
+CV_df_WB_TKW <- make_CV_df(campaign_effect_WB_TKW, error_var_WB_TKW)
+```
+
+```{r}
+CV_df_SB_HT <- make_CV_df(campaign_effect_SB_HT, error_var_SB_HT)
+CV_df_SB_PH <- make_CV_df(campaign_effect_SB_PH, error_var_SB_PH)
+CV_df_SB_TKW <- make_CV_df(campaign_effect_SB_TKW, error_var_SB_TKW)
+```
+
+## Remove outlier campaigns
+
+```{r}
+data_corrected_WB_HT_I <- data_sub_WB_HT |> correct_I(CV_df_WB_HT)
+data_corrected_WB_PH_I <- data_sub_WB_PH |> correct_I(CV_df_WB_PH)
+data_corrected_WB_TKW_I <- data_sub_WB_TKW |> correct_I(CV_df_WB_TKW)
+```
+
+```{r}
+data_corrected_SB_HT_I <- data_sub_SB_HT |> correct_I(CV_df_SB_HT)
+data_corrected_SB_PH_I <- data_sub_SB_PH |> correct_I(CV_df_SB_PH)
+data_corrected_SB_TKW_I <- data_sub_SB_TKW |> correct_I(CV_df_SB_TKW)
+```
+
+## Residuals
+
+```{r}
+asreml_res_WB_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_WB_HT_I)
+```
+
+```{r}
+asreml_res_WB_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_WB_PH_I)
+```
+
+```{r}
+asreml_res_WB_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_WB_TKW_I)
+```
+
+```{r}
+asreml_res_SB_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_SB_HT_I)
+```
+
+```{r}
+asreml_res_SB_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_SB_PH_I)
+```
+
+```{r}
+asreml_res_SB_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_SB_TKW_I)
+```
+
+```{r}
+result_BH_WB_HT <- make_BH_multtest(asreml_res_WB_HT)
+result_BH_WB_PH <- make_BH_multtest(asreml_res_WB_PH)
+result_BH_WB_TKW <- make_BH_multtest(asreml_res_WB_TKW)
+```
+
+```{r}
+result_BH_SB_HT <- make_BH_multtest(asreml_res_SB_HT)
+result_BH_SB_PH <- make_BH_multtest(asreml_res_SB_PH)
+result_BH_SB_TKW <- make_BH_multtest(asreml_res_SB_TKW)
+```
+
+```{r}
+data_corrected_WB_HT_II <- data_corrected_WB_HT_I |> correct_II(result_BH_WB_HT)
+data_corrected_WB_PH_II <- data_corrected_WB_PH_I |> correct_II(result_BH_WB_PH)
+data_corrected_WB_TKW_II <- data_corrected_WB_TKW_I |> correct_II(result_BH_WB_TKW)
+```
+
+```{r}
+data_corrected_SB_HT_II <- data_corrected_SB_HT_I |> correct_II(result_BH_SB_HT)
+data_corrected_SB_PH_II <- data_corrected_SB_PH_I |> correct_II(result_BH_SB_PH)
+data_corrected_SB_TKW_II <- data_corrected_SB_TKW_I |> correct_II(result_BH_SB_TKW)
+```
+
+## Calculate heritability
+
+```{r}
+asreml_res_h_WB_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_WB_HT_II)
+```
+
+```{r}
+asreml_res_h_WB_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_WB_PH_II)
+```
+
+```{r}
+asreml_res_h_WB_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"),
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_WB_TKW_II)
+```
+
+```{r}
+asreml_res_h_SB_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"), 
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_SB_HT_II)
+```
+
+```{r}
+asreml_res_h_SB_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_SB_PH_II)
+```
+
+```{r}
+asreml_res_h_SB_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+                     na.action = na.method(x="omit", y="omit"),
+                     residual = ~dsum( ~id(units) | campaign), data = data_corrected_SB_TKW_II)
+```
+
+```{r}
+quality_WB_HT <- get_quality(data_sub_WB_HT, asreml_res_h_WB_HT)
+quality_WB_PH <- get_quality(data_sub_WB_PH, asreml_res_h_WB_PH)
+quality_WB_TKW <- get_quality(data_sub_WB_TKW, asreml_res_h_WB_TKW)
+quality_WB_all <- bind_rows(quality_WB_HT, quality_WB_PH, quality_WB_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+write_csv(quality_WB_all,"NPPC_winter_barley_data_quality.csv")
+```
+
+```{r}
+quality_SB_HT <- get_quality(data_sub_SB_HT, asreml_res_h_SB_HT)
+quality_SB_PH <- get_quality(data_sub_SB_PH, asreml_res_h_SB_PH)
+quality_SB_TKW <- get_quality(data_sub_SB_TKW, asreml_res_h_SB_TKW)
+quality_SB_all <- bind_rows(quality_SB_HT, quality_SB_PH, quality_SB_TKW) |> mutate(across(-1, \(x) round(x, 3)))
+write_csv(quality_SB_all,"NPPC_spring_barley_data_quality.csv")
+```
+
+## Run linear mixed model with outlier corrected data
+
+```{r}
+asreml_data_WB_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_WB_HT_II)
+```
+
+```{r}
+asreml_data_WB_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_WB_PH_II)
+```
+
+```{r}
+asreml_data_WB_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+                           na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                           data = data_corrected_WB_TKW_II)
+```
+
+```{r}
+asreml_data_SB_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                          data = data_corrected_SB_HT_II)
+```
+
+```{r}
+asreml_data_SB_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_SB_PH_II)
+```
+
+```{r}
+asreml_data_SB_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+                           na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                           data = data_corrected_SB_TKW_II)
+```
+
+## Extract BLUEs and create output file
+
+```{r}
+BLUEs_WB_HT <- get_BLUEs(asreml_data_WB_HT)
+BLUEs_WB_PH <- get_BLUEs(asreml_data_WB_PH)
+BLUEs_WB_TKW <- get_BLUEs(asreml_data_WB_TKW)
+
+BLUE_WB_all <- genotypes_w |> 
+                        left_join(BLUEs_WB_HT, by="genotype") |> 
+                        left_join(BLUEs_WB_PH, by="genotype") |> 
+                        left_join(BLUEs_WB_TKW, by="genotype") |> 
+                        arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
+
+write_csv(BLUE_WB_all,"NPPC_winter_barley_BLUE_values.csv")
+summary(BLUE_WB_all)
+```
+
+```{r}
+BLUEs_SB_HT <- get_BLUEs(asreml_data_SB_HT)
+BLUEs_SB_PH <- get_BLUEs(asreml_data_SB_PH)
+BLUEs_SB_TKW <- get_BLUEs(asreml_data_SB_TKW)
+
+
+BLUE_SB_all <- genotypes_s |> 
+                        left_join(BLUEs_SB_HT, by="genotype") |> 
+                        left_join(BLUEs_SB_PH, by="genotype") |> 
+                        left_join(BLUEs_SB_TKW, by="genotype") |> 
+                        arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
+
+write_csv(BLUE_SB_all,"NPPC_spring_barley_BLUE_values.csv")
+summary(BLUE_SB_all)
+```
+
+```{r}
+library(rmarkdown)
+convert_ipynb("NPPC_historic_barley_data_analysis.ipynb")
+```
+
+```{r}
+sessionInfo()
+```
+
