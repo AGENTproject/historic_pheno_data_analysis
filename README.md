@@ -8,7 +8,7 @@ The analysis methods come from the data descriptors of IPK wheat and barley hist
 
 The main packages used are:
 - the [`tidyverse`](https://www.tidyverse.org/), [from conda-forge](https://anaconda.org/conda-forge/r-tidyverse)
-- [`multtest`, Bioconductor package, from bioconda](https://bioconda.github.io/recipes/bioconductor-multtest/README.html)
+- [`multtest`](https://bioconductor.org/packages/3.18/bioc/html/multtest.html), Bioconductor package, [from bioconda](https://bioconda.github.io/recipes/bioconductor-multtest/README.html)
 - [`asreml`](https://vsni.co.uk/software/asreml-r)(proprietary R package)
 
 Acknowledgements:
