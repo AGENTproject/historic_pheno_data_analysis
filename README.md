@@ -7,9 +7,9 @@ The analysis methods come from the data descriptors of IPK wheat and barley hist
 - [Gonzalez, M. et al. Unbalanced historical phenotypic data from seed regeneration of a barley ex situ collection. Sci Data 5, 180278 (2018)](https://doi.org/10.1038/sdata.2018.278)
 
 The main packages used are:
-- the [`tidyverse`](https://www.tidyverse.org/), [from CRAN](https://cran.r-project.org/web/packages/tidyverse/)
-- [`multtest`, from Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/multtest.html)
-- [`asreml`](https://vsni.co.uk/software/asreml-r)(proprietary package)
+- the [`tidyverse`](https://www.tidyverse.org/), [from conda-forge](https://anaconda.org/conda-forge/r-tidyverse)
+- [`multtest`, Bioconductor package, from bioconda](https://bioconda.github.io/recipes/bioconductor-multtest/README.html)
+- [`asreml`](https://vsni.co.uk/software/asreml-r)(proprietary R package)
 
 Acknowledgements:
 - to the IPK Quantitative Genetics group, for the guidance.
