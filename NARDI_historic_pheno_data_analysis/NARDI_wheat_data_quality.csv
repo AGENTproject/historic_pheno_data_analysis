@@ -1,0 +1,7 @@
+trait,heritability,var_G,var_E,no_campaigns
+days_to_heading,0.724,4.514,22.443,13.036
+plant_height,0.922,53.594,71.08,15.777
+plant_density,0.601,647.578,11292.107,26.242
+thousand_kernel_weight,0.912,10.526,16.578,16.379
+dry_matter_yield,0.691,112857.753,1484902.264,29.442
+powdery_mildew,0.306,0.173,3.24,8.242

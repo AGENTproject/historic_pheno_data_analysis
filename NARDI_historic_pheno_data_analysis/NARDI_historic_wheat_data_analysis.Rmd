@@ -1,0 +1,417 @@
+---
+title: An R Markdown document converted from "NARDI_historic_wheat_data_analysis.ipynb"
+output: html_document
+---
+
+# NARDI historical phenotypic wheat data analysis
+
+## Load packages, custom functions and data
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(multtest)
+library(asreml)
+
+source("../custom_functions.r")
+```
+
+```{r}
+data_total <- preprocess("NARDI_Phenotypic_Historical_Winter_Wheat.xlsx")
+write_csv(data_total, "NARDI_wheat.csv")
+genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
+cat("Wheat data:\n", nrow(data_total), "observations\n", nrow(genotypes), "genotypes\n", nrow(distinct(data_total["campaign"])), "campaigns\n\n")
+summary(data_total[c("days_to_heading", "plant_height", "thousand_kernel_weight")])
+```
+
+```{r}
+data_total |> head()
+```
+
+## Subset data, remove missing values and singletons, make factors
+
+```{r}
+data_sub_HT <- data_total |> make_data_sub("days_to_heading")
+data_sub_PH <- data_total |> make_data_sub("plant_height")
+data_sub_PD <- data_total |> make_data_sub("plant_density")
+data_sub_TKW <- data_total |> make_data_sub("thousand_kernel_weight")
+data_sub_HW <- data_total |> make_data_sub("hectolitric_weight")
+data_sub_DMY <- data_total |> make_data_sub("dry_matter_yield")
+data_sub_L <- data_total |> make_data_sub("lodging")
+data_sub_LR <- data_total |> make_data_sub("leaf_rust")
+data_sub_SR <- data_total |> make_data_sub("stripe_rust")
+data_sub_ST <- data_total |> make_data_sub("septoria")
+data_sub_PM <- data_total |> make_data_sub("powdery_mildew")
+```
+
+## Visualise trait values 
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=7)
+data_sub_HT |> visualise_trait(geom_density())
+data_sub_PH |> visualise_trait(geom_density())
+data_sub_PD |> visualise_trait(geom_density())
+data_sub_TKW |> visualise_trait(geom_density())
+data_sub_HW |> visualise_trait(geom_density())
+data_sub_DMY |> visualise_trait(geom_density())
+data_sub_L |> visualise_trait(geom_histogram(bins=10))
+data_sub_LR |> visualise_trait(geom_histogram(bins=10))
+data_sub_SR |> visualise_trait(geom_histogram(bins=10))
+data_sub_ST |> visualise_trait(geom_histogram(bins=10))
+data_sub_PM |> visualise_trait(geom_histogram(bins=10))
+```
+
+## Extract and format the campaign effects
+
+```{r}
+asreml_campaign_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenumb, 
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign),
+                             data = data_sub_HT)
+```
+
+```{r}
+asreml_campaign_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_PH)
+```
+
+```{r}
+asreml_campaign_PD <- asreml(fixed = plant_density ~campaign, random = ~accenumb,
+                             na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                             data = data_sub_PD)
+```
+
+```{r}
+asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_TKW)
+```
+
+```{r}
+asreml_campaign_HW <- asreml(fixed = hectolitric_weight ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_HW)
+```
+
+```{r}
+asreml_campaign_DMY <- asreml(fixed = dry_matter_yield ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_DMY)
+```
+
+asreml_campaign_L <- asreml(fixed = lodging ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_L)
+ERROR:
+Multi-section model using the sigma parameterization.
+ASReml 4.1.0 Mon Apr 22 15:58:06 2024
+Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
+Error in asreml(fixed = lodging ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
+
+Traceback:
+
+1. asreml(fixed = lodging ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
+ .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_L)
+
+asreml_campaign_LR <- asreml(fixed = leaf_rust ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_LR)
+ERROR:
+Multi-section model using the sigma parameterization.
+ASReml 4.1.0 Mon Apr 22 15:59:50 2024
+1 singularities in the Average Information matrix.
+Error in asreml(fixed = leaf_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Singularity in the Average Information matrix.
+
+Traceback:
+
+1. asreml(fixed = leaf_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
+ .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_LR)
+
+asreml_campaign_SR <- asreml(fixed = stripe_rust ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_SR)
+Multi-section model using the sigma parameterization.
+ASReml 4.1.0 Mon Apr 22 15:59:51 2024
+Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
+Error in asreml(fixed = stripe_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
+
+Traceback:
+
+1. asreml(fixed = stripe_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
+ .     y = "omit"), residual = ~dsum(~id(units) | campaign), dat
+
+asreml_campaign_ST <- asreml(fixed = septoria ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_ST)
+ERROR:
+Multi-section model using the sigma parameterization.
+ASReml 4.1.0 Mon Apr 22 16:02:12 2024
+Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
+Error in asreml(fixed = septoria ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
+
+Traceback:
+
+1. asreml(fixed = septoria ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
+ .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_ST)
+
+```{r}
+asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
+                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                              data = data_sub_PM)
+```
+
+```{r}
+campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
+campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
+campaign_effect_PD <- get_campaign_effect(asreml_campaign_PD)
+campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
+campaign_effect_HW <- get_campaign_effect(asreml_campaign_HW)
+campaign_effect_DMY <- get_campaign_effect(asreml_campaign_DMY)
+campaign_effect_PM <- get_campaign_effect(asreml_campaign_PM)
+```
+
+## Extract heterogeneous error variances
+
+```{r}
+error_var_HT <- get_error_var(asreml_campaign_HT)
+error_var_PH <- get_error_var(asreml_campaign_PH)
+error_var_PD <- get_error_var(asreml_campaign_PD)
+error_var_TKW <- get_error_var(asreml_campaign_TKW)
+error_var_HW <- get_error_var(asreml_campaign_HW)
+error_var_DMY <- get_error_var(asreml_campaign_DMY)
+error_var_PM <- get_error_var(asreml_campaign_PM)
+```
+
+## Calculate and standardize the coefficient of variation (CV)
+
+```{r}
+CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
+CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
+CV_df_PD <- make_CV_df(campaign_effect_PD, error_var_PD)
+CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
+CV_df_HW <- make_CV_df(campaign_effect_HW, error_var_HW)
+CV_df_DMY <- make_CV_df(campaign_effect_DMY, error_var_DMY)
+CV_df_PM <- make_CV_df(campaign_effect_PM, error_var_PM)
+```
+
+## Remove outlier campaigns
+
+```{r}
+data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
+data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
+data_corrected_PD_I <- data_sub_PD |> correct_I(CV_df_PD)
+data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
+data_corrected_HW_I <- data_sub_HW |> correct_I(CV_df_HW)
+data_corrected_DMY_I <- data_sub_DMY |> correct_I(CV_df_DMY)
+data_corrected_PM_I <- data_sub_PM |> correct_I(CV_df_PM)
+```
+
+## Residuals
+
+```{r}
+asreml_res_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_HT_I)
+```
+
+```{r}
+asreml_res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_PH_I)
+```
+
+```{r}
+asreml_res_PD <- asreml(fixed = plant_density ~ accenumb, random = ~ campaign, 
+                 na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                 data = data_corrected_PD_I)
+```
+
+```{r}
+asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_TKW_I)
+```
+
+asreml_res_HW <- asreml(fixed = hectolitric_weight ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_HW_I)
+ERROR:
+Multi-section model using the sigma parameterization.
+ASReml 4.1.0 Mon Apr 22 16:22:40 2024
+          LogLik        Sigma2     DF     wall    cpu
+ 1     -1501.943           1.0    657 16:22:40    0.0
+1 singularities in the Average Information matrix.
+Error in asreml(fixed = hectolitric_weight ~ accenumb, random = ~campaign, : Singularities in the average information matrix.
+
+Traceback:
+
+1. asreml(fixed = hectolitric_weight ~ accenumb, random = ~campaign, 
+ .     na.action = na.method(x = "omit", y = "omit"), residual = ~dsum(~id(units) | 
+ .         campaign), data = data_corrected_HW_I)
+
+```{r}
+asreml_res_DMY <- asreml(fixed = dry_matter_yield ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_DMY_I)
+```
+
+```{r}
+asreml_res_PM <- asreml(fixed = powdery_mildew ~ accenumb, random = ~ campaign, 
+                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                  data = data_corrected_PM_I)
+```
+
+```{r}
+result_BH_HT <- make_BH_multtest(asreml_res_HT)
+```
+
+```{r}
+result_BH_PH <- make_BH_multtest(asreml_res_PH)
+```
+
+```{r}
+result_BH_PD <- make_BH_multtest(asreml_res_PD)
+```
+
+```{r}
+result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
+```
+
+```{r}
+result_BH_DMY <- make_BH_multtest(asreml_res_DMY)
+```
+
+```{r}
+result_BH_PM <- make_BH_multtest(asreml_res_PM)
+```
+
+```{r}
+data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
+data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
+data_corrected_PD_II <- data_corrected_PD_I |> correct_II(result_BH_PD)
+data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
+data_corrected_DMY_II <- data_corrected_DMY_I |> correct_II(result_BH_DMY)
+data_corrected_PM_II <- data_corrected_PM_I |> correct_II(result_BH_PM)
+```
+
+## Calculate heritability
+
+```{r}
+asreml_res_h_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_HT_II)
+```
+
+```{r}
+asreml_res_h_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PH_II)
+```
+
+```{r}
+asreml_res_h_PD <- asreml(plant_density ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PD_II)
+```
+
+```{r}
+asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"),
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_TKW_II)
+```
+
+```{r}
+asreml_res_h_DMY <- asreml(dry_matter_yield ~1, random = ~accenumb + campaign, 
+                    na.action = na.method(x="omit", y="omit"),
+                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_DMY_II)
+```
+
+```{r}
+asreml_res_h_PM <- asreml(powdery_mildew ~1, random = ~accenumb + campaign, 
+                   na.action = na.method(x="omit", y="omit"), 
+                   residual = ~dsum( ~id(units) | campaign), data = data_corrected_PM_II)
+```
+
+```{r}
+quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
+quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
+quality_PD <- get_quality(data_sub_PD, asreml_res_h_PD)
+quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
+quality_DMY <- get_quality(data_sub_DMY, asreml_res_h_DMY)
+quality_PM <- get_quality(data_sub_PM, asreml_res_h_PM)
+
+quality_all = bind_rows(quality_HT, quality_PH, quality_PD, quality_TKW, quality_DMY, quality_PM) |> 
+                    mutate(across(-1, \(x) round(x, 3)))
+write_csv(quality_all,"NARDI_wheat_data_quality.csv")
+```
+
+## Run linear mixed model with outlier corrected data
+
+```{r}
+asreml_data_HT <- asreml(days_to_heading ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_HT_II)
+```
+
+```{r}
+asreml_data_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PH_II)
+```
+
+```{r}
+asreml_data_PD <- asreml(plant_density ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PD_II)
+```
+
+```{r}
+asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
+                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                          data = data_corrected_TKW_II)
+```
+
+```{r}
+asreml_data_DMY <- asreml(dry_matter_yield ~accenumb, random = ~campaign, 
+                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                          data = data_corrected_DMY_II)
+```
+
+```{r}
+asreml_data_PM <- asreml(powdery_mildew ~accenumb, random = ~campaign, 
+                         na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
+                         data = data_corrected_PM_II)
+```
+
+## Extract BLUEs and create output file
+
+```{r}
+BLUEs_HT <- get_BLUEs(asreml_data_HT)
+BLUEs_PH <- get_BLUEs(asreml_data_PH)
+BLUEs_PD <- get_BLUEs(asreml_data_PD)
+BLUEs_TKW <- get_BLUEs(asreml_data_TKW)
+BLUEs_DMY <- get_BLUEs(asreml_data_DMY)
+BLUEs_PM <- get_BLUEs(asreml_data_PM)
+
+
+BLUE_all <- genotypes |> left_join(BLUEs_HT, by="genotype") |> 
+                        left_join(BLUEs_PH, by="genotype") |> 
+                        left_join(BLUEs_PD, by="genotype") |> 
+                        left_join(BLUEs_TKW, by="genotype") |> 
+                        left_join(BLUEs_DMY, by="genotype") |> 
+                        left_join(BLUEs_PM, by="genotype") |>
+                        arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
+
+write_csv(BLUE_all,"NARDI_wheat_BLUE_values.csv")
+summary(BLUE_all)
+```
+
+```{r}
+library(rmarkdown)
+convert_ipynb("NARDI_historic_wheat_data_analysis.ipynb")
+```
+
+```{r}
+sessionInfo()
+```
+
