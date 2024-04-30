@@ -12,7 +12,7 @@ library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
-
+#asreml.options(maxit = 100)
 source("../custom_functions.r")
 ```
 
@@ -22,10 +22,6 @@ write_csv(data_total, "NARDI_wheat.csv")
 genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
 cat("Wheat data:\n", nrow(data_total), "observations\n", nrow(genotypes), "genotypes\n", nrow(distinct(data_total["campaign"])), "campaigns\n\n")
 summary(data_total[c("days_to_heading", "plant_height", "thousand_kernel_weight")])
-```
-
-```{r}
-data_total |> head()
 ```
 
 ## Subset data, remove missing values and singletons, make factors

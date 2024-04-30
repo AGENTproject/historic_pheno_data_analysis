@@ -1,10 +1,15 @@
-preprocess <- function(data_file){
+preprocess <- function(data_file, obs_col_types=NULL){
                 experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
-                observations <- read_xlsx(data_file, sheet = "Observed scores") |> rename_with(~tolower(gsub(" ", "_", .x)))
+                observations <- read_xlsx(data_file, sheet = "Observed scores", col_types = obs_col_types) |> rename_with(~tolower(gsub(" ", "_", .x)))
                 return(observations |> left_join(experiments, by = "experiment_id") |>
                        unite("campaign", c(year_start,year_end), sep="-") |>
                        select(accenumb:campaign) |> drop_na(accenumb, campaign) |> 
                        distinct() |> arrange(campaign, accenumb))}
+
+heading_date_to_days <- function(date_int){
+                heading_date <- as.Date(as.character(date_int), format="%Y%m%d")
+                starting_date <- as.Date(paste0(substr(date_int, 1, 4), "0101"), format="%Y%m%d")
+                return(as.numeric(heading_date - starting_date))}
 
 make_data_sub <- function(full_df, trait){
                 data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> distinct() |>
@@ -78,10 +83,9 @@ get_quality <- function(data_sub, asreml_res_h){
 
 get_BLUEs <- function(asreml_data){
                 trait <- colnames(asreml_data$mf)[3]
-                intercept_index <- nrow(asreml_data$coeff$fixed)
-                intercept <- asreml_data$coeff$fixed[intercept_index]
-                BLUE <- asreml_data$coeff$fixed[-intercept_index,] + intercept
+                intercept <- asreml_data$coefficients$fixed[1]
+                BLUE <- asreml_data$coefficients$fixed[-1,] + intercept
                 return(BLUE |> as.data.frame() |>
                         rownames_to_column() |>
-                        mutate(genotype=str_split_i(rowname,"_", -1)) |> #assuming there is no underscore in the accession numbers
+                        mutate(genotype=str_split_i(rowname,"accenumb_", -1)) |>
                         select(genotype, BLUE) |> rename_with(~paste(trait, .x, sep="_"), 2))}
