@@ -1,0 +1,4 @@
+trait,heritability,var_G,var_E,no_campaigns
+days_to_heading,0.974,22.258,15.891,26.995
+plant_height,0.995,594.817,68.925,25.403
+thousand_kernel_weight,0.97,12.171,15.327,40.927
