@@ -28,9 +28,8 @@ visualise_trait <- function(data_sub, geom){
                      + labs(title = trait_title, subtitle = "Distribution of trait values",))}
 
 get_campaign_effect <- function(asreml_campaign){
-                intercept_index <- nrow(asreml_campaign$coeff$fixed)
-                intercept <- asreml_campaign$coeff$fixed[intercept_index]
-                campaign_effect <- asreml_campaign$coeff$fixed[-intercept_index,] + intercept
+                intercept <- asreml_campaign$coefficients$fixed[1]
+                campaign_effect <- asreml_campaign$coefficients$fixed[-1,] + intercept
                 return(campaign_effect |> as.data.frame() |> rownames_to_column() |> 
                         mutate(campaign = str_sub(rowname,10)) |> 
                         select(campaign, campaign_effect))}
