@@ -318,12 +318,12 @@ asreml_data_SB_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaig
 ## Extract BLUEs and create output file
 
 ```{r}
-BLUEs_WB_HT <- get_BLUEs(asreml_data_WB_HT)
+#BLUEs_WB_HT <- get_BLUEs(asreml_data_WB_HT)
 BLUEs_WB_PH <- get_BLUEs(asreml_data_WB_PH)
 BLUEs_WB_TKW <- get_BLUEs(asreml_data_WB_TKW)
 
 BLUE_WB_all <- genotypes_w |> 
-                        left_join(BLUEs_WB_HT, by="genotype") |> 
+                        #left_join(BLUEs_WB_HT, by="genotype") |> 
                         left_join(BLUEs_WB_PH, by="genotype") |> 
                         left_join(BLUEs_WB_TKW, by="genotype") |> 
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))

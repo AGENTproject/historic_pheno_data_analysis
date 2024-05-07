@@ -12,7 +12,7 @@ library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
-asreml.options(maxit = 100)
+
 source("../custom_functions.r")
 ```
 

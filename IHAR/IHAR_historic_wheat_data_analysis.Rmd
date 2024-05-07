@@ -289,11 +289,9 @@ asreml_data_WW_PH <- asreml(plant_height ~accenumb, random = ~campaign,
                          data = data_corrected_WW_PH_II)
 ```
 
-```{r}
 asreml_data_WW_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
                            na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                            data = data_corrected_WW_TKW_II)
-```
 
 ```{r}
 asreml_data_SW_HT <- asreml(end_of_heading ~accenumb, random = ~campaign, 
