@@ -4,6 +4,9 @@ output: html_document
 ---
 
 # IHAR historical phenotypic wheat data analysis
+origin and version of the input files: 
+- https://urgi.versailles.inrae.fr/fairdom/data_files/54?version=4
+- https://urgi.versailles.inrae.fr/fairdom/data_files/55?version=3
 
 ## Load packages, custom functions and data
 
@@ -40,16 +43,16 @@ Let's choose "end of heading" as heading time trait, as it has way less NAs than
 
 ```{r}
 cat("Winter:\n")
-data_sub_WW_HT <- data_total_winter |> make_data_sub("end_of_heading")
-data_sub_WW_PH <- data_total_winter |> make_data_sub("plant_height")
-data_sub_WW_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight")
+data_sub_WW_HT <- data_total_winter |> make_data_sub("end_of_heading", 50, 250)
+data_sub_WW_PH <- data_total_winter |> make_data_sub("plant_height", 5, 250)
+data_sub_WW_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight", 5, 100)
 ```
 
 ```{r}
 cat("Spring:\n")
-data_sub_SW_HT <- data_total_spring |> make_data_sub("end_of_heading")
-data_sub_SW_PH <- data_total_spring |> make_data_sub("plant_height")
-data_sub_SW_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight")
+data_sub_SW_HT <- data_total_spring |> make_data_sub("end_of_heading", 50, 250)
+data_sub_SW_PH <- data_total_spring |> make_data_sub("plant_height", 5, 250)
+data_sub_SW_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight", 5, 100)
 ```
 
 ## Visualise trait values 

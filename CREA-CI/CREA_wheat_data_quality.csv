@@ -1,9 +1,9 @@
 trait,heritability,var_G,var_E,no_campaigns
-days_to_heading,0.9,29.53,17.713,5.373
-plant_height,0.952,414.582,117.939,5.64
-thousand_kernel_weight,0.848,29.473,16.884,3.208
+days_to_heading,0.883,32.238,19.884,4.668
+plant_height,0.947,425.644,119.755,5.013
+thousand_kernel_weight,0.872,27.826,21.587,5.288
 powdery_mildew,0.04,0.073,4.424,2.535
-leaf_rust,0.386,0.515,2.649,3.238
+leaf_rust,0.37,0.496,2.718,3.22
 septoria_tritici_ssp,0.067,0.035,1.738,3.572
 protein_content,0.756,1.093,2.688,7.629
 sds_sedimentation_volume,0.913,66.261,46.837,7.432

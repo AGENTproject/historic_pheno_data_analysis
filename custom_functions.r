@@ -11,8 +11,9 @@ heading_date_to_days <- function(date_int){
                 starting_date <- as.Date(paste0(substr(date_int, 1, 4), "0101"), format="%Y%m%d")
                 return(as.numeric(heading_date - starting_date))}
 
-make_data_sub <- function(full_df, trait){
-                data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> drop_na() |> distinct() |>
+make_data_sub <- function(full_df, trait, left=-Inf, right=Inf){
+                data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> 
+                drop_na() |> distinct() |> filter(between(.data[[trait]], left, right)) |> 
                 group_by(accenumb) |> filter(n()>1) |> group_by(campaign) |> filter(n()>1) |> 
                 mutate_at(vars(accenumb, campaign), factor)
                 cat(nrow(data_sub), trait, "rows kept\n") 

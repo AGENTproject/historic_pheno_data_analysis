@@ -5,6 +5,8 @@ output: html_document
 
 # CREA-CI historical phenotypic wheat data analysis
 
+origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/data_files/196?version=10
+
 ## Load packages, custom functions and data
 
 ```{r}
@@ -27,9 +29,9 @@ summary(data_total[c("days_to_heading", "plant_height", "thousand_kernel_weight"
 ## Subset data, remove missing values and singletons, make factors
 
 ```{r}
-data_sub_HT <- data_total |> make_data_sub("days_to_heading")
-data_sub_PH <- data_total |> make_data_sub("plant_height")
-data_sub_TKW <- data_total |> make_data_sub("thousand_kernel_weight")
+data_sub_HT <- data_total |> make_data_sub("days_to_heading", 50, 250)
+data_sub_PH <- data_total |> make_data_sub("plant_height", 5, 250)
+data_sub_TKW <- data_total |> make_data_sub("thousand_kernel_weight", 5, 100)
 data_sub_PM <- data_total |> make_data_sub("powdery_mildew")
 data_sub_LR<- data_total |> make_data_sub("leaf_rust")
 # YR has observations in only one campaign so cannot be analysed here
