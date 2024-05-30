@@ -50,9 +50,12 @@ asreml_campaign_HT <- asreml(fixed = days_to_heading ~campaign, random = ~accenu
                              data = data_sub_HT)
 ```
 
+```{r}
+data_sub_PH <- data_sub_PH |> remove_lonely(2) # debug asreml
 asreml_campaign_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                              data = data_sub_PH)
+```
 
 ```{r}
 asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
@@ -62,7 +65,7 @@ asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random =
 
 ```{r}
 campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
-#campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
+campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
 campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
 ```
 
@@ -70,7 +73,7 @@ campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
 
 ```{r}
 error_var_HT <- get_error_var(asreml_campaign_HT)
-#error_var_PH <- get_error_var(asreml_campaign_PH)
+error_var_PH <- get_error_var(asreml_campaign_PH)
 error_var_TKW <- get_error_var(asreml_campaign_TKW)
 ```
 
@@ -78,7 +81,7 @@ error_var_TKW <- get_error_var(asreml_campaign_TKW)
 
 ```{r}
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
-#CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
+CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
 CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
 ```
 
@@ -86,7 +89,7 @@ CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
 
 ```{r}
 data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
-#data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
+data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
 data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
 ```
 
@@ -98,9 +101,11 @@ asreml_res_HT <- asreml(fixed = days_to_heading ~ accenumb, random = ~ campaign,
                  data = data_corrected_HT_I)
 ```
 
+```{r}
 asreml_res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign, 
                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                  data = data_corrected_PH_I)
+```
 
 ```{r}
 asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
@@ -112,7 +117,9 @@ asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ c
 result_BH_HT <- make_BH_multtest(asreml_res_HT)
 ```
 
+```{r}
 result_BH_PH <- make_BH_multtest(asreml_res_PH)
+```
 
 ```{r}
 result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
@@ -120,10 +127,10 @@ result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
 
 ```{r}
 data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
-#data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
+data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
 data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
 write_csv(data_corrected_HT_II,"data_corrected_HT_II.csv")
-#write_csv(data_corrected_PH_II,"data_corrected_PH_II.csv")
+write_csv(data_corrected_PH_II,"data_corrected_PH_II.csv")
 write_csv(data_corrected_TKW_II,"data_corrected_TKW_II.csv")
 ```
 
@@ -135,9 +142,11 @@ asreml_res_h_HT <- asreml(days_to_heading ~1, random = ~accenumb + campaign,
                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_HT_II)
 ```
 
+```{r}
 asreml_res_h_PH <- asreml(plant_height ~1, random = ~accenumb + campaign, 
                    na.action = na.method(x="omit", y="omit"), 
                    residual = ~dsum( ~id(units) | campaign), data = data_corrected_PH_II)
+```
 
 ```{r}
 asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campaign, 
@@ -147,10 +156,10 @@ asreml_res_h_TKW <- asreml(thousand_kernel_weight ~1, random = ~accenumb + campa
 
 ```{r}
 quality_HT <- get_quality(data_sub_HT, asreml_res_h_HT)
-#quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
+quality_PH <- get_quality(data_sub_PH, asreml_res_h_PH)
 quality_TKW <- get_quality(data_sub_TKW, asreml_res_h_TKW)
 quality_all <- bind_rows(quality_HT, 
-                         #quality_PH, 
+                         quality_PH, 
                          quality_TKW) |> mutate(across(-1, \(x) round(x, 3)))
 write_csv(quality_all,"Agroscope_spelt_data_quality.csv")
 ```
@@ -163,9 +172,11 @@ asreml_data_HT <- asreml(days_to_heading ~accenumb, random = ~campaign,
                          data = data_corrected_HT_II)
 ```
 
+```{r}
 asreml_data_PH <- asreml(plant_height ~accenumb, random = ~campaign, 
                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                          data = data_corrected_PH_II)
+```
 
 ```{r}
 asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
@@ -177,12 +188,12 @@ asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign,
 
 ```{r}
 BLUEs_HT <- get_BLUEs(asreml_data_HT)
-#BLUEs_PH <- get_BLUEs(asreml_data_PH)
+BLUEs_PH <- get_BLUEs(asreml_data_PH)
 BLUEs_TKW <- get_BLUEs(asreml_data_TKW)
 
 BLUE_all <- genotypes |> 
                         left_join(BLUEs_HT, by="genotype") |> 
-                        #left_join(BLUEs_PH, by="genotype") |> 
+                        left_join(BLUEs_PH, by="genotype") |> 
                         left_join(BLUEs_TKW, by="genotype") |> 
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
 

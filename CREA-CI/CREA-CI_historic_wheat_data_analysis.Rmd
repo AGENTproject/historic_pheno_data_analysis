@@ -75,7 +75,7 @@ asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random =
 ```
 
 ```{r}
-data_sub_PM <- data_sub_PM |> filter(campaign != "2013-2014") # this campaign has all PM values equal to zero and is excluded to enable fitting the model. 
+data_sub_PM <- data_sub_PM |> filter(campaign != "2013-2014") # debug asreml: this campaign has all PM values equal to zero and is excluded to enable fitting the model. 
 asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
                               na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                               data = data_sub_PM)

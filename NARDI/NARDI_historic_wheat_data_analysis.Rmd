@@ -96,61 +96,6 @@ asreml_campaign_DMY <- asreml(fixed = dry_matter_yield ~campaign, random = ~acce
                               data = data_sub_DMY)
 ```
 
-asreml_campaign_L <- asreml(fixed = lodging ~campaign, random = ~accenumb,
-                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                              data = data_sub_L)
-ERROR:
-Multi-section model using the sigma parameterization.
-ASReml 4.1.0 Mon Apr 22 15:58:06 2024
-Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
-Error in asreml(fixed = lodging ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
-
-Traceback:
-
-1. asreml(fixed = lodging ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
- .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_L)
-
-asreml_campaign_LR <- asreml(fixed = leaf_rust ~campaign, random = ~accenumb,
-                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                              data = data_sub_LR)
-ERROR:
-Multi-section model using the sigma parameterization.
-ASReml 4.1.0 Mon Apr 22 15:59:50 2024
-1 singularities in the Average Information matrix.
-Error in asreml(fixed = leaf_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Singularity in the Average Information matrix.
-
-Traceback:
-
-1. asreml(fixed = leaf_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
- .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_LR)
-
-asreml_campaign_SR <- asreml(fixed = stripe_rust ~campaign, random = ~accenumb,
-                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                              data = data_sub_SR)
-Multi-section model using the sigma parameterization.
-ASReml 4.1.0 Mon Apr 22 15:59:51 2024
-Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
-Error in asreml(fixed = stripe_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
-
-Traceback:
-
-1. asreml(fixed = stripe_rust ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
- .     y = "omit"), residual = ~dsum(~id(units) | campaign), dat
-
-asreml_campaign_ST <- asreml(fixed = septoria ~campaign, random = ~accenumb,
-                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                              data = data_sub_ST)
-ERROR:
-Multi-section model using the sigma parameterization.
-ASReml 4.1.0 Mon Apr 22 16:02:12 2024
-Log-likelihood decreased to  -inf ; trying with reduced updates (1.77892)
-Error in asreml(fixed = septoria ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", : Iteration failed; ifault: 2020
-
-Traceback:
-
-1. asreml(fixed = septoria ~ campaign, random = ~accenumb, na.action = na.method(x = "omit", 
- .     y = "omit"), residual = ~dsum(~id(units) | campaign), data = data_sub_ST)
-
 ```{r}
 asreml_campaign_PM <- asreml(fixed = powdery_mildew ~campaign, random = ~accenumb,
                               na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
@@ -228,23 +173,6 @@ asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ c
                   na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                   data = data_corrected_TKW_I)
 ```
-
-asreml_res_HW <- asreml(fixed = hectolitric_weight ~ accenumb, random = ~ campaign, 
-                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                  data = data_corrected_HW_I)
-ERROR:
-Multi-section model using the sigma parameterization.
-ASReml 4.1.0 Mon Apr 22 16:22:40 2024
-          LogLik        Sigma2     DF     wall    cpu
- 1     -1501.943           1.0    657 16:22:40    0.0
-1 singularities in the Average Information matrix.
-Error in asreml(fixed = hectolitric_weight ~ accenumb, random = ~campaign, : Singularities in the average information matrix.
-
-Traceback:
-
-1. asreml(fixed = hectolitric_weight ~ accenumb, random = ~campaign, 
- .     na.action = na.method(x = "omit", y = "omit"), residual = ~dsum(~id(units) | 
- .         campaign), data = data_corrected_HW_I)
 
 ```{r}
 asreml_res_DMY <- asreml(fixed = dry_matter_yield ~ accenumb, random = ~ campaign, 

@@ -292,9 +292,11 @@ asreml_data_WW_PH <- asreml(plant_height ~accenumb, random = ~campaign,
                          data = data_corrected_WW_PH_II)
 ```
 
+```{r}
 asreml_data_WW_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
                            na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                            data = data_corrected_WW_TKW_II)
+```
 
 ```{r}
 asreml_data_SW_HT <- asreml(end_of_heading ~accenumb, random = ~campaign, 
@@ -319,12 +321,12 @@ asreml_data_SW_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaig
 ```{r}
 BLUEs_WW_HT <- get_BLUEs(asreml_data_WW_HT)
 BLUEs_WW_PH <- get_BLUEs(asreml_data_WW_PH)
-#BLUEs_WW_TKW <- get_BLUEs(asreml_data_WW_TKW)
+BLUEs_WW_TKW <- get_BLUEs(asreml_data_WW_TKW)
 
 BLUE_WW_all <- genotypes_w |> 
                         left_join(BLUEs_WW_HT, by="genotype") |> 
                         left_join(BLUEs_WW_PH, by="genotype") |> 
-                        #left_join(BLUEs_WW_TKW, by="genotype") |> 
+                        left_join(BLUEs_WW_TKW, by="genotype") |> 
                         arrange(genotype) |> mutate(across(-1, \(x) round(x, 2)))
 
 write_csv(BLUE_WW_all,"IHAR_winter_wheat_BLUE_values.csv")

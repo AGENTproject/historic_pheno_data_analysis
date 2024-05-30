@@ -11,11 +11,15 @@ heading_date_to_days <- function(date_int){
                 starting_date <- as.Date(paste0(substr(date_int, 1, 4), "0101"), format="%Y%m%d")
                 return(as.numeric(heading_date - starting_date))}
 
+remove_lonely <- function(data, set_size=1){
+                while(min(table(data$accenumb)) <= set_size || min(table(data$campaign)) <= set_size){
+                    data <- data |> filter(n()>set_size, .by=campaign) |> filter(n()>set_size, .by=accenumb) |> droplevels()}
+                return(data)}
+
 make_data_sub <- function(full_df, trait, left=-Inf, right=Inf){
                 data_sub <- full_df |> select("accenumb", "campaign", all_of(trait)) |> 
                 drop_na() |> distinct() |> filter(between(.data[[trait]], left, right)) |> 
-                group_by(accenumb) |> filter(n()>1) |> group_by(campaign) |> filter(n()>1) |> 
-                mutate_at(vars(accenumb, campaign), factor)
+                mutate_at(vars(accenumb, campaign), factor) |> remove_lonely()
                 cat(nrow(data_sub), trait, "rows kept\n") 
                 return(as.data.frame(data_sub))}
 
@@ -49,8 +53,7 @@ correct_I <- function(data_sub, CV_df){
                 cat(nrow(outlier_campaigns), "outlier campaign(s) detected for trait", colnames(data_sub)[3])
                 if (nrow(outlier_campaigns) >= 1){cat(":", paste(outlier_campaigns$campaign), "\n")}
                 else{cat("\n")}
-                return(data_sub |> filter(! campaign %in% outlier_campaigns) |>
-                       group_by(campaign) |> filter(n()>1) |> ungroup())}
+                return(data_sub |> filter(! campaign %in% outlier_campaigns) |> remove_lonely())}
 
 make_BH_multtest <- function(asreml_res){
                 trait_title <- colnames(asreml_res$mf)[3] |> str_replace_all("_", " ") |> str_to_title()
@@ -68,8 +71,7 @@ make_BH_multtest <- function(asreml_res){
 
 correct_II <- function(data_corrected_I, result_BH){
                 data_corrected_I[result_BH[which(!result_BH$is_outlier),"index"],] |> 
-                group_by(accenumb) |> filter(n() > 1) |> group_by(campaign) |> filter(n() > 1) |> 
-                arrange(campaign, accenumb) |> as.data.frame() |> droplevels()}
+                remove_lonely() |> arrange(campaign, accenumb) |> as.data.frame()}
 
 get_quality <- function(data_sub, asreml_res_h){
                 trait <- colnames(data_sub)[3]
