@@ -1,4 +1,3 @@
-.ipynb_checkpoints/
-CREA-CI_historic_pheno_data_analysis/.ipynb_checkpoints/
-INIA_historic_pheno_data_analysis/.ipynb_checkpoints/
-NPPC_historic_pheno_data_analysis/.ipynb_checkpoints/
+*.ipynb_checkpoints/
+*.RData
+*.Rhistory

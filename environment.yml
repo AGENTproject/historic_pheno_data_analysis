@@ -1,4 +1,4 @@
-name: R_env
+name: R
 channels:
 - conda-forge
 - bioconda
