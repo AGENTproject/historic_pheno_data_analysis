@@ -42,6 +42,8 @@ data_sub_PH |> visualise_trait(geom_density())
 data_sub_TKW |> visualise_trait(geom_density())
 ```
 
+We can see that there are not enough data points for a statistical analysis of the TKW trait.
+
 ## Extract and format the campaign effects
 
 ```{r}
@@ -57,15 +59,8 @@ asreml_campaign_PH <- asreml(fixed = plant_height ~campaign, random = ~accenumb,
 ```
 
 ```{r}
-asreml_campaign_TKW <- asreml(fixed = thousand_kernel_weight ~campaign, random = ~accenumb,
-                              na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                              data = data_sub_TKW)
-```
-
-```{r}
 campaign_effect_HT <- get_campaign_effect(asreml_campaign_HT)
 campaign_effect_PH <- get_campaign_effect(asreml_campaign_PH)
-campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
 ```
 
 ## Extract heterogeneous error variances
@@ -73,7 +68,6 @@ campaign_effect_TKW <- get_campaign_effect(asreml_campaign_TKW)
 ```{r}
 error_var_HT <- get_error_var(asreml_campaign_HT)
 error_var_PH <- get_error_var(asreml_campaign_PH)
-error_var_TKW <- get_error_var(asreml_campaign_TKW)
 ```
 
 ## Calculate and standardize the coefficient of variation (CV)
@@ -81,7 +75,6 @@ error_var_TKW <- get_error_var(asreml_campaign_TKW)
 ```{r}
 CV_df_HT <- make_CV_df(campaign_effect_HT, error_var_HT)
 CV_df_PH <- make_CV_df(campaign_effect_PH, error_var_PH)
-CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
 ```
 
 ## Remove outlier campaigns
@@ -89,7 +82,6 @@ CV_df_TKW <- make_CV_df(campaign_effect_TKW, error_var_TKW)
 ```{r}
 data_corrected_HT_I <- data_sub_HT |> correct_I(CV_df_HT)
 data_corrected_PH_I <- data_sub_PH |> correct_I(CV_df_PH)
-data_corrected_TKW_I <- data_sub_TKW |> correct_I(CV_df_TKW)
 ```
 
 ## Residuals
@@ -107,12 +99,6 @@ asreml_res_PH <- asreml(fixed = plant_height ~ accenumb, random = ~ campaign,
 ```
 
 ```{r}
-asreml_res_TKW <- asreml(fixed = thousand_kernel_weight ~ accenumb, random = ~ campaign, 
-                  na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                  data = data_corrected_TKW_I)
-```
-
-```{r}
 result_BH_HT <- make_BH_multtest(asreml_res_HT)
 ```
 
@@ -121,16 +107,10 @@ result_BH_PH <- make_BH_multtest(asreml_res_PH)
 ```
 
 ```{r}
-result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
-```
-
-```{r}
 data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
 data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
-data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
 write_csv(data_corrected_HT_II,"data_corrected_HT_II.csv")
 write_csv(data_corrected_PH_II,"data_corrected_PH_II.csv")
-write_csv(data_corrected_TKW_II,"data_corrected_TKW_II.csv")
 ```
 
 ## Calculate heritability
@@ -167,10 +147,6 @@ asreml_data_PH <- asreml(plant_height ~accenumb, random = ~campaign,
                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
                          data = data_corrected_PH_II)
 ```
-
-asreml_data_TKW <- asreml(thousand_kernel_weight ~accenumb, random = ~campaign, 
-                          na.action = na.method(x="omit", y="omit"), residual = ~dsum(~id(units) | campaign), 
-                          data = data_corrected_TKW_II)
 
 ## Extract BLUEs and create output file
 
