@@ -4,6 +4,8 @@ channels:
 - bioconda
 dependencies:
 - r-tidyverse=2.0.*
+- r-janitor=2.2.*
+- r-svglite=2.1.*
 - bioconductor-multtest=2.58.*
 - r-irkernel
 - jupyter_client

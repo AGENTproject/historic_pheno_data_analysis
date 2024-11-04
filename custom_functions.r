@@ -1,6 +1,8 @@
-preprocess <- function(data_file, obs_col_types=NULL){
-                experiments <- read_xlsx(data_file, sheet = "Experiment") |> rename_with(~tolower(gsub(" ", "_", .x)))
-                observations <- read_xlsx(data_file, sheet = "Observed scores", col_types = obs_col_types) |> rename_with(~tolower(gsub(" ", "_", .x)))
+preprocess <- function(data_file){
+                experiments <- readxl::read_xlsx(data_file, sheet = "Experiment") |> janitor::clean_names()
+                n_obs_cols <- readxl::read_xlsx(data_file, sheet = "Observed scores", n_max=1) |> ncol()
+                obs_col_types <- c('numeric', rep('text', 5), rep('numeric', n_obs_cols-6))
+                observations <- suppressWarnings(readxl::read_xlsx(data_file, sheet = "Observed scores", col_types = obs_col_types)) |> janitor::clean_names()
                 return(observations |> left_join(experiments, by = "experiment_id") |>
                        unite("campaign", c(year_start,year_end), sep="-") |>
                        select(accenumb:campaign) |> drop_na(accenumb, campaign) |> 
