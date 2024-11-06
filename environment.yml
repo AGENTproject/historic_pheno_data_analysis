@@ -3,11 +3,11 @@ channels:
 - conda-forge
 - bioconda
 dependencies:
-- r-tidyverse=2.0.*
-- r-janitor=2.2.*
-- r-svglite=2.1.*
-- bioconductor-multtest=2.58.*
-- r-irkernel
-- jupyter_client
+- conda-forge::jupyter_client
+- conda-forge::r-irkernel
+- conda-forge::r-janitor=2.2.*
+- conda-forge::r-svglite=2.1.*
+- conda-forge::r-tidyverse=2.0.*
+- bioconda::bioconductor-multtest=2.58.*
 
 # only package to install in R with `install.packages()`: asreml v4.2
