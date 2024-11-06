@@ -68,7 +68,7 @@ make_BH_multtest <- function(asreml_res){
                 cat(sum(result_df$is_outlier), "outlier value(s) detected for trait", trait_title, "\n")
                 plot(ggplot(result_df, aes(index,std_residual, color=is_outlier)) + geom_jitter()
                      + scale_colour_manual(values = c("TRUE" = "#A51D2D", "FALSE" = "#26A269"))
-                     + labs(title = trait_title, subtitle = "Outlier detection with Bonferroni–Holm method"))
+                     + labs(title = trait_title, subtitle = "Outlier detection with Bonferroni-Holm method"))
                 return(result_df |> as.data.frame())}
 
 correct_II <- function(data_corrected_I, result_BH){
