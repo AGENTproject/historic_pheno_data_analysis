@@ -11,7 +11,6 @@ origin and version of the input files:
 ## Load packages, custom functions and data
 
 ```{r}
-library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
@@ -20,7 +19,7 @@ source("../custom_functions.r")
 ```
 
 ```{r}
-data_total_winter <- preprocess("IHAR Phenotypic_Historical-winter wheat.xlsx", obs_col_types = c('numeric', rep('text', 5), rep('numeric', 22)))
+data_total_winter <- preprocess("IHAR Phenotypic_Historical-winter wheat.xlsx")
 write_csv(data_total_winter, "IHAR_winter_wheat.csv")
 genotypes_w <- distinct(data_total_winter["accenumb"]) |> rename("genotype" = "accenumb")
 cat("Winter Wheat:\n", nrow(data_total_winter), "observations\n", nrow(genotypes_w), "genotypes\n", nrow(distinct(data_total_winter["campaign"])), "campaigns\n\n")
@@ -28,7 +27,7 @@ summary(data_total_winter[c("beginning_of_heading", "end_of_heading", "plant_hei
 ```
 
 ```{r}
-data_total_spring <- preprocess("IHAR Phenotypic_Historical-spring wheat.xlsx", obs_col_types = c('numeric', rep('text', 5), rep('numeric', 4), 'skip', rep('numeric', 8))) |> 
+data_total_spring <- preprocess("IHAR Phenotypic_Historical-spring wheat.xlsx") |> 
                         mutate(beginning_of_heading = heading_date_to_days(beginning_of_heading_date)) |>
                         mutate(end_of_heading = heading_date_to_days(end_of_heading_date))
 write_csv(data_total_spring, "IHAR_spring_wheat.csv")

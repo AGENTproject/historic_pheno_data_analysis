@@ -9,7 +9,6 @@ origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/d
 ## Load packages, custom functions and data
 
 ```{r}
-library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
@@ -18,7 +17,7 @@ source("../custom_functions.r")
 ```
 
 ```{r}
-data_total <- preprocess("Spelt_hist_v6-1-1.xlsx", obs_col_types = c('numeric', rep('text', 5), rep('numeric', 8)))
+data_total <- preprocess("Spelt_hist_v6-1-1.xlsx")
 write_csv(data_total, "Agroscope_spelt.csv")
 genotypes <- distinct(data_total["accenumb"]) |> rename("genotype" = "accenumb")
 cat("spelt data:\n", nrow(data_total), "observations\n", nrow(genotypes), "genotypes\n", nrow(distinct(data_total["campaign"])), "campaigns\n\n")

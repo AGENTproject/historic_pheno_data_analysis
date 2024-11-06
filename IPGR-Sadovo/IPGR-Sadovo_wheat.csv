@@ -1,4 +1,4 @@
-accenumb,agent_id,doi,days_to_heading,thousand_kernel_weight,plant_height,date_of_heading,type_of_bush,leaf-flag_attitude,spike_attitude,spike_shape,spike_branching,spike_awnedness,glume_colour,name,description,campaign
+accenumb,agent_id,doi,days_to_heading,thousand_kernel_weight,plant_height,date_of_heading,type_of_bush,leaf_flag_attitude,spike_attitude,spike_shape,spike_branching,spike_awnedness,glume_colour,name,description,campaign
 1974-TRT-AE-52,NA,10.18730/ZBDHF,140,40.32,68,19820520,5,3,5,3,1,1,1,Field trial IPGR-Sadovo,Six rows were planted from each accession with row spacing 20/5 cm and 1 m length.,1981-1982
 1978-TRT-AE-151,NA,10.18730/ZBDQN,138,36.37,80,19820518,5,3,5,3,1,1,4,Field trial IPGR-Sadovo,Six rows were planted from each accession with row spacing 20/5 cm and 1 m length.,1981-1982
 1978-TRT-AE-157,NA,10.18730/ZBDGE,139,44.6,100,19820519,7,3,3,3,1,1,1,Field trial IPGR-Sadovo,Six rows were planted from each accession with row spacing 20/5 cm and 1 m length.,1981-1982

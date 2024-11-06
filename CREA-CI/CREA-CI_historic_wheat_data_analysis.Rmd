@@ -10,7 +10,6 @@ origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/d
 ## Load packages, custom functions and data
 
 ```{r}
-library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
