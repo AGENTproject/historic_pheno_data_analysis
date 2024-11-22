@@ -247,6 +247,21 @@ data_corrected_PC_II <- data_corrected_PC_I |> correct_II(result_BH_PC)
 data_corrected_SV_II <- data_corrected_SV_I |> correct_II(result_BH_SV)
 ```
 
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_HT_II,
+    data_corrected_PH_II,
+    data_corrected_TKW_II,
+    data_corrected_PM_II,
+    data_corrected_LR_II,
+    data_corrected_ST_II,
+    data_corrected_PC_II,
+    data_corrected_SV_II
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "CREA_wheat_corrected.csv")
+```
+
 ## Calculate heritability
 
 ```{r}

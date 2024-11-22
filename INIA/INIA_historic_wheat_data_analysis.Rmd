@@ -127,9 +127,16 @@ result_BH_TKW <- make_BH_multtest(asreml_res_TKW)
 data_corrected_HT_II <- data_corrected_HT_I |> correct_II(result_BH_HT)
 data_corrected_PH_II <- data_corrected_PH_I |> correct_II(result_BH_PH)
 data_corrected_TKW_II <- data_corrected_TKW_I |> correct_II(result_BH_TKW)
-write_csv(data_corrected_HT_II,"data_corrected_HT_II.csv")
-write_csv(data_corrected_PH_II,"data_corrected_PH_II.csv")
-write_csv(data_corrected_TKW_II,"data_corrected_TKW_II.csv")
+```
+
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_HT_II,
+    data_corrected_PH_II,
+    data_corrected_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "INIA_wheat_corrected.csv")
 ```
 
 ## Calculate heritability

@@ -11,7 +11,6 @@ origin and version of the input files:
 ## Load packages, custom functions and data
 
 ```{r}
-library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
@@ -142,6 +141,16 @@ result_BH_WW_TKW <- make_BH_multtest(asreml_res_WW_TKW)
 data_corrected_WW_HT_II <- data_corrected_WW_HT_I |> correct_II(result_BH_WW_HT)
 data_corrected_WW_PH_II <- data_corrected_WW_PH_I |> correct_II(result_BH_WW_PH)
 data_corrected_WW_TKW_II <- data_corrected_WW_TKW_I |> correct_II(result_BH_WW_TKW)
+```
+
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_WW_HT_II,
+    data_corrected_WW_PH_II,
+    data_corrected_WW_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "NPPC_winter_wheat_corrected.csv")
 ```
 
 ## Calculate heritability

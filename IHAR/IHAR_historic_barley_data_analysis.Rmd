@@ -216,9 +216,29 @@ data_corrected_WB_TKW_II <- data_corrected_WB_TKW_I |> correct_II(result_BH_WB_T
 ```
 
 ```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_WB_HT_II,
+    data_corrected_WB_PH_II,
+    data_corrected_WB_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "IHAR_winter_barley_corrected.csv")
+```
+
+```{r}
 data_corrected_SB_HT_II <- data_corrected_SB_HT_I |> correct_II(result_BH_SB_HT)
 data_corrected_SB_PH_II <- data_corrected_SB_PH_I |> correct_II(result_BH_SB_PH)
 data_corrected_SB_TKW_II <- data_corrected_SB_TKW_I |> correct_II(result_BH_SB_TKW)
+```
+
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_SB_HT_II,
+    data_corrected_SB_PH_II,
+    data_corrected_SB_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "IHAR_spring_barley_corrected.csv")
 ```
 
 ## Calculate heritability

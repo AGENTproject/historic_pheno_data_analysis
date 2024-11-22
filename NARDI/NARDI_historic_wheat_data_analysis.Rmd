@@ -218,6 +218,19 @@ data_corrected_DMY_II <- data_corrected_DMY_I |> correct_II(result_BH_DMY)
 data_corrected_PM_II <- data_corrected_PM_I |> correct_II(result_BH_PM)
 ```
 
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_HT_II,
+    data_corrected_PH_II,
+    data_corrected_PD_II,
+    data_corrected_TKW_II,
+    data_corrected_DMY_II,
+    data_corrected_PM_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "NARDI_wheat_corrected.csv")
+```
+
 ## Calculate heritability
 
 ```{r}

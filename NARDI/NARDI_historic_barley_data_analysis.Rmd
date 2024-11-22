@@ -4,11 +4,13 @@ output: html_document
 ---
 
 # NARDI historical phenotypic barley data analysis
+origin and version of the input files: 
+- https://urgi.versailles.inrae.fr/fairdom/data_files/490?version=2
+- https://urgi.versailles.inrae.fr/fairdom/data_files/398?version=4
 
 ## Load packages, custom functions and data
 
 ```{r}
-library(readxl)
 library(tidyverse)
 library(multtest)
 library(asreml)
@@ -25,7 +27,7 @@ summary(data_total_winter[c("days_to_heading", "plant_height", "thousand_kernel_
 ```
 
 ```{r}
-data_total_spring <- preprocess("NARDI_Phenotypic_Historical_Spring_Barley.xlsx")
+data_total_spring <- preprocess("NARDI_Phenotypic_Historical_Spring_Barley_18jan.xlsx")
 write_csv(data_total_spring, "NARDI_spring_barley.csv")
 genotypes_s <- distinct(data_total_spring["accenumb"]) |> rename("genotype" = "accenumb")
 cat("Spring Barley:\n", nrow(data_total_spring), "observations\n", nrow(genotypes_s), "genotypes\n", nrow(distinct(data_total_spring["campaign"])), "campaigns\n\n")
@@ -36,16 +38,16 @@ summary(data_total_spring[c("days_to_heading", "plant_height", "thousand_kernel_
 
 ```{r}
 cat("Winter:\n")
-data_sub_WB_HT <- data_total_winter |> make_data_sub("days_to_heading")
-data_sub_WB_PH <- data_total_winter |> make_data_sub("plant_height")
-data_sub_WB_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight")
+data_sub_WB_HT <- data_total_winter |> make_data_sub("days_to_heading", 50, 250)
+data_sub_WB_PH <- data_total_winter |> make_data_sub("plant_height", 5, 250)
+data_sub_WB_TKW <- data_total_winter |> make_data_sub("thousand_kernel_weight", 5, 100)
 ```
 
 ```{r}
 cat("Spring:\n")
-data_sub_SB_HT <- data_total_spring |> make_data_sub("days_to_heading")
-data_sub_SB_PH <- data_total_spring |> make_data_sub("plant_height")
-data_sub_SB_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight")
+data_sub_SB_HT <- data_total_spring |> make_data_sub("days_to_heading", 50, 250)
+data_sub_SB_PH <- data_total_spring |> make_data_sub("plant_height", 5, 250)
+data_sub_SB_TKW <- data_total_spring |> make_data_sub("thousand_kernel_weight", 5, 100)
 ```
 
 ## Visualise trait values 
@@ -212,9 +214,29 @@ data_corrected_WB_TKW_II <- data_corrected_WB_TKW_I |> correct_II(result_BH_WB_T
 ```
 
 ```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_WB_HT_II,
+    data_corrected_WB_PH_II,
+    data_corrected_WB_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "NARDI_winter_barley_corrected.csv")
+```
+
+```{r}
 data_corrected_SB_HT_II <- data_corrected_SB_HT_I |> correct_II(result_BH_SB_HT)
 data_corrected_SB_PH_II <- data_corrected_SB_PH_I |> correct_II(result_BH_SB_PH)
 data_corrected_SB_TKW_II <- data_corrected_SB_TKW_I |> correct_II(result_BH_SB_TKW)
+```
+
+```{r}
+data_corrected_all <- bind_rows(
+    data_corrected_SB_HT_II,
+    data_corrected_SB_PH_II,
+    data_corrected_SB_TKW_II,
+    ) |> pivot_longer(cols = !c(accenumb,campaign), names_to = "trait") |>
+         drop_na() |> arrange(campaign, accenumb, trait)
+write_csv(data_corrected_all, "NARDI_spring_barley_corrected.csv")
 ```
 
 ## Calculate heritability
