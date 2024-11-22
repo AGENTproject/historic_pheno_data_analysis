@@ -4,9 +4,13 @@ channels:
 - bioconda
 dependencies:
 - conda-forge::jupyter_client
+- conda-forge::r-codetools=0.* # only for maps, weak dep of rnaturalearth
+- conda-forge::r-ggally=2.2.* # only for pairs gridplots
+- conda-forge::r-gt=0.11.* # only for tables
 - conda-forge::r-irkernel
 - conda-forge::r-janitor=2.2.*
-- conda-forge::r-svglite=2.1.*
+- conda-forge::r-rnaturalearth=1.0.* # only for maps
+- conda-forge::r-svglite=2.1.* # only for figures svg export
 - conda-forge::r-tidyverse=2.0.*
 - bioconda::bioconductor-multtest=2.58.*
 
