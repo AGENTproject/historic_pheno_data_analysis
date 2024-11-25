@@ -5,7 +5,7 @@ preprocess <- function(data_file){
                 observations <- suppressWarnings(readxl::read_xlsx(data_file, sheet = "Observed scores", col_types = obs_col_types)) |> janitor::clean_names()
                 return(observations |> left_join(experiments, by = "experiment_id") |>
                        unite("campaign", c(year_start,year_end), sep="-") |>
-                       select(accenumb:campaign) |> drop_na(accenumb, campaign) |> 
+                       drop_na(accenumb, campaign) |> 
                        distinct() |> arrange(campaign, accenumb))}
 
 heading_date_to_days <- function(date_int){
