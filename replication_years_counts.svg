@@ -477,7 +477,7 @@
 </defs>
 <g clip-path='url(#cpNDguODF8MzcyLjg1fDMyMC4xMXwzMzcuMjg=)'>
 <rect x='48.81' y='320.11' width='324.04' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='210.83' y='331.84' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='98.05px' lengthAdjust='spacingAndGlyphs'>thousand kernel weight</text>
+<text x='210.83' y='331.84' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='101.78px' lengthAdjust='spacingAndGlyphs'>Thousand Kernel Weight</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 </g>
@@ -488,7 +488,7 @@
 </defs>
 <g clip-path='url(#cpNDguODF8MzcyLjg1fDE2Mi44MHwxNzkuOTc=)'>
 <rect x='48.81' y='162.80' width='324.04' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='210.83' y='174.52' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='50.19px' lengthAdjust='spacingAndGlyphs'>plant height</text>
+<text x='210.83' y='174.52' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='51.18px' lengthAdjust='spacingAndGlyphs'>Plant Height</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 </g>
@@ -499,7 +499,7 @@
 </defs>
 <g clip-path='url(#cpNDguODF8MzcyLjg1fDUuNDh8MjIuNjU=)'>
 <rect x='48.81' y='5.48' width='324.04' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='210.83' y='17.21' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='65.96px' lengthAdjust='spacingAndGlyphs'>days to heading</text>
+<text x='210.83' y='17.21' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='69.77px' lengthAdjust='spacingAndGlyphs'>Days To Heading</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 <polyline points='63.54,474.69 63.54,471.95 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
@@ -552,10 +552,10 @@
 <polyline points='46.07,404.77 48.81,404.77 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='46.07,374.23 48.81,374.23 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='46.07,343.70 48.81,343.70 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text x='210.83' y='495.88' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='138.62px' lengthAdjust='spacingAndGlyphs'>years accession was tested</text>
-<text transform='translate(13.33,247.30) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='29.50px' lengthAdjust='spacingAndGlyphs'>count</text>
+<text x='210.83' y='495.88' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='139.24px' lengthAdjust='spacingAndGlyphs'>Years accession was tested</text>
+<text transform='translate(13.33,247.30) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='31.18px' lengthAdjust='spacingAndGlyphs'>Count</text>
 <rect x='383.81' y='130.15' width='114.71' height='234.30' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<text x='389.29' y='144.81' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='38.53px' lengthAdjust='spacingAndGlyphs'>dataset</text>
+<text x='389.29' y='144.81' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='39.79px' lengthAdjust='spacingAndGlyphs'>Dataset</text>
 <rect x='389.29' y='151.61' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #EBEBEB;' />
 <rect x='390.00' y='152.32' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #F8766D;' />
 <rect x='389.29' y='168.89' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #EBEBEB;' />

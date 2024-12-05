@@ -2941,7 +2941,7 @@
 </defs>
 <g clip-path='url(#cpMTA0LjY0fDQ5OC41MnwzMjkuMDB8MzQ2LjE3)'>
 <rect x='104.64' y='329.00' width='393.88' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='301.58' y='340.73' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='98.05px' lengthAdjust='spacingAndGlyphs'>thousand kernel weight</text>
+<text x='301.58' y='340.73' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='101.78px' lengthAdjust='spacingAndGlyphs'>Thousand Kernel Weight</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 </g>
@@ -2952,7 +2952,7 @@
 </defs>
 <g clip-path='url(#cpMTA0LjY0fDQ5OC41MnwxNjcuMjR8MTg0LjQx)'>
 <rect x='104.64' y='167.24' width='393.88' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='301.58' y='178.97' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='50.19px' lengthAdjust='spacingAndGlyphs'>plant height</text>
+<text x='301.58' y='178.97' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='51.18px' lengthAdjust='spacingAndGlyphs'>Plant Height</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 </g>
@@ -2963,7 +2963,7 @@
 </defs>
 <g clip-path='url(#cpMTA0LjY0fDQ5OC41Mnw1LjQ4fDIyLjY1)'>
 <rect x='104.64' y='5.48' width='393.88' height='17.17' style='stroke-width: 1.07; stroke: none; fill: #D9D9D9;' />
-<text x='301.58' y='17.21' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='65.96px' lengthAdjust='spacingAndGlyphs'>days to heading</text>
+<text x='301.58' y='17.21' text-anchor='middle' style='font-size: 8.80px;fill: #1A1A1A; font-family: "Liberation Sans";' textLength='69.77px' lengthAdjust='spacingAndGlyphs'>Days To Heading</text>
 </g>
 <g clip-path='url(#cpMC4wMHw1MDQuMDB8MC4wMHw1MDQuMDA=)'>
 <polyline points='188.01,474.69 188.01,471.95 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
@@ -3060,7 +3060,7 @@
 <polyline points='101.90,375.37 104.64,375.37 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='101.90,364.14 104.64,364.14 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='101.90,352.91 104.64,352.91 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text x='301.58' y='495.88' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='80.14px' lengthAdjust='spacingAndGlyphs'>value (after OC)</text>
-<text transform='translate(13.33,247.30) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='38.53px' lengthAdjust='spacingAndGlyphs'>dataset</text>
+<text x='301.58' y='495.88' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='81.15px' lengthAdjust='spacingAndGlyphs'>Value (after OC)</text>
+<text transform='translate(13.33,247.30) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Liberation Sans";' textLength='39.79px' lengthAdjust='spacingAndGlyphs'>Dataset</text>
 </g>
 </svg>
