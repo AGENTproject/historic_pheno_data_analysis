@@ -4,7 +4,7 @@ output: html_document
 ---
 
 # Agroscope historical phenotypic wheat data analysis
-origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/data_files/39?version=16
+origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/data_files/39?version=17
 
 ## Load packages, custom functions and data
 

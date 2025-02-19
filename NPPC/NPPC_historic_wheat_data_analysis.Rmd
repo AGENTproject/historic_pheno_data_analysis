@@ -5,8 +5,8 @@ output: html_document
 
 # NPPC historical phenotypic wheat data analysis
 origin and version of the input files: 
-- https://urgi.versailles.inrae.fr/fairdom/data_files/253?version=5
-- https://urgi.versailles.inrae.fr/fairdom/data_files/252?version=3
+- https://urgi.versailles.inrae.fr/fairdom/data_files/253?version=6
+- https://urgi.versailles.inrae.fr/fairdom/data_files/252?version=4
 
 ## Load packages, custom functions and data
 

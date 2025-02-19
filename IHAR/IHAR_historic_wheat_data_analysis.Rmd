@@ -6,7 +6,7 @@ output: html_document
 # IHAR historical phenotypic wheat data analysis
 origin and version of the input files: 
 - https://urgi.versailles.inrae.fr/fairdom/data_files/54?version=4
-- https://urgi.versailles.inrae.fr/fairdom/data_files/55?version=3
+- https://urgi.versailles.inrae.fr/fairdom/data_files/55?version=4
 
 ## Load packages, custom functions and data
 

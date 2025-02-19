@@ -4,7 +4,7 @@ output: html_document
 ---
 
 # Agroscope historical phenotypic spelt data analysis
-origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/data_files/58?version=13
+origin and version of the input file: https://urgi.versailles.inrae.fr/fairdom/data_files/58?version=14
 
 ## Load packages, custom functions and data
 
