@@ -1,4 +1,4 @@
-name: R
+name: R_AGENT_historical
 channels:
 - conda-forge
 - bioconda
