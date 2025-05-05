@@ -1,7 +1,9 @@
 cff-version: 1.2.0
 title: AGENTproject/historic_pheno_data_analysis
-message: If you use this software, please cite it using the metadata from this file.
+license: CC-BY-4.0
 type: software
+abstract: AGENT project historical phenotypic data analysis and curation
+message: If you use this software, please cite it using the metadata from this file.
 authors:
   - given-names: Erwan
     family-names: Le Floch
@@ -15,4 +17,8 @@ authors:
     family-names: Reif
     affiliation: Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
     orcid: 'https://orcid.org/0000-0002-6742-265X'
-license: CC-BY-4.0
+keywords:
+  - plant sciences
+  - data curation
+  - phenotyping
+  - plant genetic resources
