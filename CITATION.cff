@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: AGENTproject/historic_pheno_data_analysis
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - given-names: Erwan
+    family-names: Le Floch
+    affiliation: Université Paris-Saclay, INRAE, Institut Français de Bioinformatique (IFB), BioinfOmics, URGI, 78026, Versailles, France
+    orcid: 'https://orcid.org/0000-0002-1010-6859'
+  - given-names: Marcel Oliver
+    family-names: Berkner
+    affiliation: Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
+    orcid: 'https://orcid.org/0000-0003-2262-5098'
+  - given-names: Jochen Christoph
+    family-names: Reif
+    affiliation: Leibniz Institute of Plant Genetics and Crop Plant Research (IPK), Gatersleben, Germany
+    orcid: 'https://orcid.org/0000-0002-6742-265X'
+license: CC-BY-4.0
