@@ -2,6 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15343013.svg)](https://doi.org/10.5281/zenodo.15343013)
 
+[![SWH](https://archive.softwareheritage.org/badge/swh:1:dir:a95895b0bfdbf346dbb31d656c9ef446c056caec/)](https://archive.softwareheritage.org/swh:1:dir:a95895b0bfdbf346dbb31d656c9ef446c056caec)
+
 Analysis of wheat and barley historic data from 9 AGENT genebanks : Calculation of heritability and BLUEs of traits of agronomic interest, in an easy-to-reuse manner thanks to notebooks and custom functions.
 
 The analysis methods come from the article of Philipp et al. (2018) [Leveraging the Use of Historical Data Gathered During Seed Regeneration of an ex Situ Genebank Collection of Wheat](https://doi.org/10.3389/fpls.2018.00609).
