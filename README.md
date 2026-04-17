@@ -18,3 +18,5 @@ Acknowledgements:
 
 - to the IPK Quantitative Genetics group, for the hospitality and guidance.
 - to the CREA-CI and INIA genebanks, for their hospitality, and to all genebanks for their collaboration.
+
+Related publication: Le Floch et al. Wheat historical phenotypic data from European genebanks as an important resource for research and breeding. Sci Data (2026). https://doi.org/10.1038/s41597-026-06908-x
